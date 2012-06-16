@@ -4,3 +4,6 @@
 
 http://scalajb.appspot.com
 
+### sample
+* https://api.github.com/repos/xuwei-k/scalajb => http://scalajb.appspot.com/?url=https://api.github.com/repos/xuwei-k/scalajb
+
