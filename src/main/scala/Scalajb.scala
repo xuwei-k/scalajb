@@ -13,9 +13,16 @@ object Scalajb{
     "this", "throw", "trait", "true", "try", "type",
     "val", "var", "while", "with", "yield")
 
-  // TODO
   val javaReserved = Set(
-    "native","strictfp", "switch", "throws", "transient","volatile")
+    "byte", "char", "short", "int", "long", "float", "double",
+    "boolean", "true" , "false", "void", "if" , "else" , "switch" , "case" , "default",
+    "for" , "while" , "do" , "continue" , "break" , "return", "package" , "import" ,
+    "class" , "interface" , "extends" , "implements" , "this" , "super" , "new",
+    "null" , "instanceof" , "public" , "protected" , "private" , "final" ,
+    "static" , "abstract" , "native" , "synchronized" , "try" , "catch" , "finally",
+    "strictfp", "throw" ,"assert" , "enum" ,"const" ,"goto","throws", "transient","volatile"
+  )
+
 
   def fromURL(url:String) = fromJSON(Source.fromURL(url).mkString)
 
@@ -38,7 +45,7 @@ object Scalajb{
   }
 
   def type2t(f:Field):FIELD_DEF = {
-    val k = if(reserved(f._1)) "`" + f._1 + "`" else f._1
+    val k = f._1
     val v =
     f._2 match {
       case NULL        => CLASS.Unknown
@@ -70,16 +77,16 @@ object Scalajb{
 
   def objects(v:Value,name:String = "Unknown",depth:Int = 0):Set[CLAZZ] = {
     v match{
-      case NULL        => Set.empty 
+      case NULL        => Set.empty
       case STRING(_)   => Set.empty
       case DOUBLE(_)   => Set.empty
       case INT(_)      => Set.empty
       case BOOL(_)     => Set.empty
       case OBJ(obj)    => {
         val children = obj.flatMap{case (a,b) => objects(b,a,depth + 1)}.toSet
-        children + CLAZZ(name,obj.map{type2t}.toSet,depth) 
+        children + CLAZZ(name,obj.map{type2t}.toSet,depth)
       }
-      case ARRAY(obj)  => 
+      case ARRAY(obj)  =>
         val children = obj.flatMap(objects(_)).toSet
         val (other,oneOrZero) = children.groupBy(_.depth).map(_._2).partition{_.size > 1}
         other.map(distinct).toSet ++ oneOrZero.flatten
@@ -89,17 +96,52 @@ object Scalajb{
   type FIELD_DEF = (String,CLASS.T)
 
   case class CLAZZ(name:String,fields:Set[FIELD_DEF],depth:Int){
+    val className = name.head.toUpper + name.tail
+
+    override def toString = scalaStr
+
     // TODO when over 23 fields. create abstract class or trait instead of case class ?
-    override lazy val toString = {
-      val max = fields.map(_._1.size).max 
+    def scalaStr:String = {
+      val _fields = fields.map{case (k,v) => escapeScala(k) -> v}
+      val max = fields.map(_._1.size).max
       val n = name.head.toUpper + name.tail
-      fields.map{ 
+      fields.map{
         case (k,t) =>
           val indent = " " * (max - k.size)
         "  " + k + indent + " :" + t
       }.mkString("case class " + n + "(\n",",\n","\n)\n")
     }
+
+    def str(lang:Lang) = lang match{
+      case JAVA  => javaStr()
+      case SCALA => scalaStr
+    }
+
+    def javaStr(indentStr:String = "  "):String = {
+      def i(indentLevel:Int) = indentStr * indentLevel
+      val _fields = fields.map{case (k,v) => escapeJava(k) -> v}
+
+      Iterator(
+        "public class " + className + "{",
+          i(1) + "public " + className + "(",
+          i(2) + _fields.map{case (k,t) =>
+            "final " + t.javaStr + " " + k
+          }.mkString(","),
+            i(1) + "){",
+          _fields.map{case (k,t) =>
+            i(2) + "this." + k + " = " + k + ";"
+          }.mkString("","\n","\n" + i(1) + "}\n"),
+          _fields.map{case (k,t) =>
+            i(1) + "public final " + t.javaStr + " " + k + ";"
+          }.mkString("\n"),
+        "}\n"
+      ).mkString("\n")
+    }
   }
+
+  def escapeScala(word:String) = if(reserved(word)) "`" + word + "`" else word
+  def escapeJava(word:String) = if(javaReserved(word)) "_" + word else word
+
 }
 
 object Types{
@@ -110,19 +152,28 @@ object Types{
   case class INT(num: Long) extends Value
   case class BOOL(value: Boolean) extends Value
   type Field = (String,Value)
-  case class OBJ(obj: List[Field]) extends Value 
+  case class OBJ(obj: List[Field]) extends Value
   case class ARRAY(arr: List[Value]) extends Value
 }
 
 object CLASS{
-  sealed abstract class T
+  sealed abstract class T{
+    def javaStr:String = toString
+  }
   case object Unknown  extends T
   case object String   extends T
-  case object Double   extends T
-  case object Long     extends T
-  case object Boolean  extends T
+  case object Double   extends T{
+    override val javaStr = "double"
+  }
+  case object Long     extends T{
+    override val javaStr = "long"
+  }
+  case object Boolean  extends T{
+    override val javaStr = "boolean"
+  }
   case class  Opt(t:T) extends T{
     override val toString = "Option[" + t  + "]"
+    override val javaStr = "Option<" + t + ">"
   }
   case class  Obj(name:String) extends T{
     override val toString = name.head.toUpper + name.tail
