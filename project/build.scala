@@ -23,7 +23,10 @@ object build extends Build{
         "org.eclipse.jetty" % "jetty-webapp" % "7.4.5.v20110725" % "container"
       ),
       initialCommands in console := {
-        Iterator("com.github.xuwei_k.scalajb").map{
+        Iterator(
+          "com.github.xuwei_k.scalajb",
+          "net.liftweb.json"
+        ).map{
           "import " + _ + "._;\n"
         }.mkString
       },
