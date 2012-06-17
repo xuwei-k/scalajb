@@ -13,6 +13,7 @@ object build extends Build{
       licenses := Seq("MIT License" -> url("http://www.opensource.org/licenses/mit-license.php")),
       version := "0.1.0-SNAPSHOT",
       scalaVersion := "2.9.2",
+      scalacOptions ++= Seq("-deprecation","-unchecked"),
       libraryDependencies ++= Seq(
         "net.liftweb" %% "lift-json" % "2.4",
         "net.databinder" %% "unfiltered-filter" % UF,
