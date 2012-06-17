@@ -15,6 +15,7 @@ object build extends Build{
       scalaVersion := "2.9.2",
       scalacOptions ++= Seq("-deprecation","-unchecked"),
       libraryDependencies ++= Seq(
+        "org.scalaz" %% "scalaz-core" % "6.0.4",
         "net.liftweb" %% "lift-json" % "2.4",
         "net.databinder" %% "unfiltered-filter" % UF,
         "net.databinder" %% "unfiltered-spec" % UF % "test",
