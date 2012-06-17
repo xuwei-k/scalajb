@@ -18,9 +18,15 @@ object build extends Build{
         "net.liftweb" %% "lift-json" % "2.4",
         "net.databinder" %% "unfiltered-filter" % UF,
         "net.databinder" %% "unfiltered-spec" % UF % "test",
+        "org.scalaj" %% "scalaj-http" % "0.3.1" % "test",
         "javax.servlet" % "servlet-api" % "2.3" % "provided",
         "org.eclipse.jetty" % "jetty-webapp" % "7.4.5.v20110725" % "container"
       ),
+      initialCommands in console := {
+        Iterator("com.github.xuwei_k.scalajb").map{
+          "import " + _ + "._;\n"
+        }.mkString
+      },
       resolvers ++= Seq(
        "https://repository.jboss.org/nexus/content/groups/public/",
        "http://xuwei-k.github.com/mvn"
