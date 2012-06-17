@@ -18,7 +18,7 @@ class Spec extends Specification with unfiltered.spec.jetty.Served {
   )
 
   "Web" should {
-    def test(param:(String,String))(func:String => Boolean) = {
+    def test(param:(String,String))(funcs:(String => Boolean) *) = {
 
       List("","api").foreach{ path =>
         urls.foreach{url =>
@@ -26,17 +26,19 @@ class Spec extends Specification with unfiltered.spec.jetty.Served {
           req.responseCode must_== 200
           val str = req.asString
           println(str)
-          func(str) must beTrue
+          funcs.foreach{ f =>
+            f(str) must beTrue
+          }
         }
       }
     }
 
     "scala" in {
-      test(("lang","scala"))(_.contains("case class"))
+      test(("lang","scala"))(_.contains("case class"),_.contains("`private`"),! _.contains(" private "))
     }
 
     "java" in {
-      test(("lang","java"))(_.contains("public class"))
+      test(("lang","java"))(_.contains("public class"),_.contains("_private"),! _.contains(" private "))
     }
   }
 }

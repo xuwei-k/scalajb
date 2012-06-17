@@ -103,9 +103,9 @@ object Scalajb{
     // TODO when over 23 fields. create abstract class or trait instead of case class ?
     def scalaStr:String = {
       val _fields = fields.map{case (k,v) => escapeScala(k) -> v}
-      val max = fields.map(_._1.size).max
+      val max = _fields.map(_._1.size).max
       val n = name.head.toUpper + name.tail
-      fields.map{
+      _fields.map{
         case (k,t) =>
           val indent = " " * (max - k.size)
         "  " + k + indent + " :" + t
