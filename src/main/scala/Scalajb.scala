@@ -28,7 +28,7 @@ object Scalajb{
 
   def fromJSON(json:String) = fromJValue(parse(json))
 
-  def fromJValue(json:JValue) = objects(convert(json))
+  def fromJValue(json:JValue) = objects(convert(json),ROOT_CLAZZ.name,ROOT_CLAZZ)
 
   import Types._
 
@@ -75,7 +75,7 @@ object Scalajb{
     classes.head.copy(fields = require ++ optionalFields)
   }
 
-  def objects(v:Value,name:String = "Unknown",depth:Int = 0):Set[CLAZZ] = {
+  def objects(v:Value,name:String,parent:CLAZZ):Set[CLAZZ] = {
     v match{
       case NULL        => Set.empty
       case STRING(_)   => Set.empty
@@ -83,11 +83,12 @@ object Scalajb{
       case INT(_)      => Set.empty
       case BOOL(_)     => Set.empty
       case OBJ(obj)    => {
-        val children = obj.flatMap{case (a,b) => objects(b,a,depth + 1)}.toSet
-        children + CLAZZ(name,obj.map{type2t}.toSet,depth)
+        val p = CLAZZ(name,obj.map{type2t}.toSet,Some(parent))
+        val children = obj.flatMap{case (a,b) => objects(b,a,p)}.toSet
+        children + p
       }
       case ARRAY(obj)  =>
-        val children = obj.flatMap(objects(_)).toSet
+        val children = obj.flatMap{v => objects(v,name,parent) }.toSet
         val (other,oneOrZero) = children.groupBy(_.depth).map(_._2).partition{_.size > 1}
         other.map(distinct).toSet ++ oneOrZero.flatten
     }
@@ -95,8 +96,12 @@ object Scalajb{
 
   type FIELD_DEF = (String,CLASS.T)
 
-  case class CLAZZ(name:String,fields:Set[FIELD_DEF],depth:Int){
+  case object ROOT_CLAZZ extends CLAZZ("ROOT",Set(),None)
+
+  case class CLAZZ(name:String,fields:Set[FIELD_DEF],parent:Option[CLAZZ]){
     val className = name.head.toUpper + name.tail
+
+    lazy val depth:Int = parent.map{_.depth + 1}.getOrElse(0)
 
     override def toString = scalaStr
 
