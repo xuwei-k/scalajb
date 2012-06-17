@@ -43,7 +43,7 @@ class Web extends unfiltered.filter.Plan {
   }
 
   def fromURL(url:String,lang:Lang) =
-    Scalajb.fromURL(url).map(_.str(lang)).mkString("\n\n")
+    Scalajb.fromURL(url).toSeq.sortBy(_.depth).map(_.str(lang)).mkString("\n\n")
 
   def fromJSON(j:String,lang:Lang) =
     Scalajb.fromJSON(j).map(_.str(lang)).mkString("\n\n")
