@@ -1,5 +1,6 @@
 package com.github.xuwei_k.scalajb
 
+import scalaz._,Scalaz._
 import unfiltered.request._
 import unfiltered.response._
 import java.net.URL
@@ -31,22 +32,30 @@ class Web extends unfiltered.filter.Plan {
     )
   }
 
-  def intent = {
-    case GET(Path("/api") & Params(LANG(l) & URL(url))) =>
-      ResponseString(fromURL(url,l))
-    case GET(Path("/api") & Params(LANG(l) & JSON(j))) =>
-      ResponseString(fromJSON(j,l))
-    case GET(Path("/") & Params(LANG(l) & URL(url))) =>
-      htmlPre(fromURL(url,l))
-    case GET(Path("/") & Params(LANG(l) & JSON(j))) =>
-      htmlPre(fromJSON(j,l))
+  object DISTINCT{
+    def unapply(p:Params.Map):Option[Boolean] = Some(
+      p.get("distinct").flatMap{
+        _.headOption.flatMap{_.parseBoolean.toOption}
+      }.getOrElse(false)
+    )
   }
 
-  def fromURL(url:String,lang:Lang) =
-    Scalajb.fromURL(url).toSeq.sortBy(_.depth).map(_.str(lang)).mkString("\n\n")
+  def intent = {
+    case GET(Path("/api") & Params(LANG(l) & URL(url) & DISTINCT(d))) =>
+      ResponseString(fromURL(url,l,d))
+    case GET(Path("/api") & Params(LANG(l) & JSON(j) & DISTINCT(d))) =>
+      ResponseString(fromJSON(j,l,d))
+    case GET(Path("/") & Params(LANG(l) & URL(url) & DISTINCT(d))) =>
+      htmlPre(fromURL(url,l,d))
+    case GET(Path("/") & Params(LANG(l) & JSON(j) & DISTINCT(d))) =>
+      htmlPre(fromJSON(j,l,d))
+  }
 
-  def fromJSON(j:String,lang:Lang) =
-    Scalajb.fromJSON(j).map(_.str(lang)).mkString("\n\n")
+  def fromURL(url:String,lang:Lang,distinct:Boolean) =
+    Scalajb.fromURL(url,distinct).toSeq.sortBy(_.depth).map(_.str(lang)).mkString("\n\n")
+
+  def fromJSON(j:String,lang:Lang,distinct:Boolean) =
+    Scalajb.fromJSON(j,distinct).map(_.str(lang)).mkString("\n\n")
 
   def htmlPre(string:String) =
     Html(

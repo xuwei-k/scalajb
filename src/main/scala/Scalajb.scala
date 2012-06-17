@@ -24,11 +24,11 @@ object Scalajb{
   )
 
 
-  def fromURL(url:String) = fromJSON(Source.fromURL(url).mkString)
+  def fromURL(url:String,distinct:Boolean) = fromJSON(Source.fromURL(url).mkString,distinct:Boolean)
 
-  def fromJSON(json:String) = fromJValue(parse(json))
+  def fromJSON(json:String,distinct:Boolean) = fromJValue(parse(json),distinct)
 
-  def fromJValue(json:JValue) = objects(convert(json))
+  def fromJValue(json:JValue,distinct:Boolean) = objects(convert(json),distinct)
 
   import Types._
 
@@ -75,7 +75,7 @@ object Scalajb{
     classes.head.copy(fields = require ++ optionalFields)
   }
 
-  def objects(v:Value,name:String = "Unknown",depth:Int = 0):Set[CLAZZ] = {
+  def objects(v:Value,d:Boolean,name:String = "Unknown",depth:Int = 0):Set[CLAZZ] = {
     v match{
       case NULL        => Set.empty
       case STRING(_)   => Set.empty
@@ -83,13 +83,17 @@ object Scalajb{
       case INT(_)      => Set.empty
       case BOOL(_)     => Set.empty
       case OBJ(obj)    => {
-        val children = obj.flatMap{case (a,b) => objects(b,a,depth + 1)}.toSet
+        val children = obj.flatMap{case (a,b) => objects(b,d,a,depth + 1)}.toSet
         children + CLAZZ(name,obj.map{type2t}.toSet,depth)
       }
       case ARRAY(obj)  =>
-        val children = obj.flatMap(objects(_)).toSet
-        val (other,oneOrZero) = children.groupBy(_.depth).map(_._2).partition{_.size > 1}
-        other.map(distinct).toSet ++ oneOrZero.flatten
+        val children = obj.flatMap(v => objects(v,d)).toSet
+        if(d){
+          val (other,oneOrZero) = children.groupBy(_.depth).map(_._2).partition{_.size > 1}
+          other.map(distinct).toSet ++ oneOrZero.flatten
+        }else{
+          children
+        }
     }
   }
 
