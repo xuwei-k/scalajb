@@ -16,7 +16,7 @@ object build extends Build{
       scalacOptions ++= Seq("-deprecation","-unchecked"),
       libraryDependencies ++= Seq(
         "org.scalaz" %% "scalaz-core" % "6.0.4",
-        "net.liftweb" %% "lift-json" % "2.4",
+        "net.liftweb" % "lift-json_2.9.1" % "2.4-jfield_no_jvalue",
         "net.databinder" %% "unfiltered-filter" % UF,
         "net.databinder" %% "unfiltered-spec" % UF % "test",
         "org.scalaj" %% "scalaj-http" % "0.3.1" % "test",

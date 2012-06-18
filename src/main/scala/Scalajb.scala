@@ -28,33 +28,19 @@ object Scalajb{
 
   def fromJSON(json:String,distinct:Boolean) = fromJValue(parse(json),distinct)
 
-  def fromJValue(json:JValue,distinct:Boolean) = objects(convert(json),distinct)
+  def fromJValue(json:JValue,distinct:Boolean) = objects(json,distinct)
 
-  import Types._
-
-  def convert(j:JValue):Value = {
-    j match {
-      case JObject(obj)        => OBJ(obj.map{case JField(k,v) => k -> convert(v)})
-      case JArray(arr)         => ARRAY(arr.map(convert))
-      case JNothing | JNull    => NULL
-      case JString(s)          => STRING(s)
-      case JDouble(num)        => DOUBLE(num)
-      case JInt(num)           => INT(num.longValue)
-      case JBool(value)        => BOOL(value)
-    }
-  }
-
-  def type2t(f:Field):FIELD_DEF = {
+  def type2t(f:JField):FIELD_DEF = {
     val k = f._1
     val v =
     f._2 match {
-      case NULL        => CLASS.Unknown
-      case STRING(s)   => CLASS.String
-      case DOUBLE(num) => CLASS.Double
-      case INT(num)    => CLASS.Long
-      case BOOL(value) => CLASS.Boolean
-      case OBJ(obj)    => CLASS.Obj(k)
-      case ARRAY(arr)  =>
+      case JNull | JNothing  => CLASS.Unknown
+      case JString(_)        => CLASS.String
+      case JDouble(_)        => CLASS.Double
+      case JInt(_)           => CLASS.Long
+      case JBool(_)          => CLASS.Boolean
+      case JObject(_)        => CLASS.Obj(k)
+      case JArray(arr)       =>
         val r = arr.map(o => type2t((k,o))).toSet
         if(r.size == 1){
           CLASS.Array(Right(k))
@@ -75,18 +61,18 @@ object Scalajb{
     classes.head.copy(fields = require ++ optionalFields)
   }
 
-  def objects(v:Value,d:Boolean,name:String = "Unknown",depth:Int = 0):Set[CLAZZ] = {
+  def objects(v:JValue,d:Boolean,name:String = "Unknown",depth:Int = 0):Set[CLAZZ] = {
     v match{
-      case NULL        => Set.empty
-      case STRING(_)   => Set.empty
-      case DOUBLE(_)   => Set.empty
-      case INT(_)      => Set.empty
-      case BOOL(_)     => Set.empty
-      case OBJ(obj)    => {
+      case JNull | JNothing  => Set.empty
+      case JString(_)        => Set.empty
+      case JDouble(_)        => Set.empty
+      case JInt(_)           => Set.empty
+      case JBool(_)          => Set.empty
+      case JObject(obj)      => {
         val children = obj.flatMap{case (a,b) => objects(b,d,a,depth + 1)}.toSet
         children + CLAZZ(name,obj.map{type2t}.toSet,depth)
       }
-      case ARRAY(obj)  =>
+      case JArray(obj)  =>
         val children = obj.flatMap(v => objects(v,d)).toSet
         if(d){
           val (other,oneOrZero) = children.groupBy(_.depth).map(_._2).partition{_.size > 1}
@@ -146,18 +132,6 @@ object Scalajb{
   def escapeScala(word:String) = if(reserved(word)) "`" + word + "`" else word
   def escapeJava(word:String) = if(javaReserved(word)) "_" + word else word
 
-}
-
-object Types{
-  sealed abstract class Value
-  case object NULL extends Value
-  case class STRING(s: String) extends Value
-  case class DOUBLE(num: Double) extends Value
-  case class INT(num: Long) extends Value
-  case class BOOL(value: Boolean) extends Value
-  type Field = (String,Value)
-  case class OBJ(obj: List[Field]) extends Value
-  case class ARRAY(arr: List[Value]) extends Value
 }
 
 object CLASS{
