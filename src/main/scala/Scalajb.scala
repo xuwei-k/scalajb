@@ -31,24 +31,23 @@ object Scalajb{
   def fromJValue(json:JValue,distinct:Boolean) = objects(json,distinct)
 
   def type2t(f:JField):FIELD_DEF = {
-    val k = f._1
     val v =
-    f._2 match {
+    f.value match {
       case JNull | JNothing  => CLASS.Unknown
       case JString(_)        => CLASS.String
       case JDouble(_)        => CLASS.Double
       case JInt(_)           => CLASS.Long
       case JBool(_)          => CLASS.Boolean
-      case JObject(_)        => CLASS.Obj(k)
+      case JObject(_)        => CLASS.Obj(f.name)
       case JArray(arr)       =>
-        val r = arr.map(o => type2t((k,o))).toSet
+        val r = arr.map(o => type2t(JField(f.name,o))).toSet
         if(r.size == 1){
-          CLASS.Array(Right(k))
+          CLASS.Array(Right(f.name))
         }else{
           CLASS.Array(Left(r.map(_._1)))
         }
     }
-    k -> v
+    f.name -> v
   }
 
   def distinct(classes:Set[CLAZZ]):CLAZZ = {
@@ -69,7 +68,7 @@ object Scalajb{
       case JInt(_)           => Set.empty
       case JBool(_)          => Set.empty
       case JObject(obj)      => {
-        val children = obj.flatMap{case (a,b) => objects(b,d,a,depth + 1)}.toSet
+        val children = obj.flatMap{case JField(a,b) => objects(b,d,a,depth + 1)}.toSet
         children + CLAZZ(name,obj.map{type2t}.toSet,depth)
       }
       case JArray(obj)  =>
