@@ -24,17 +24,17 @@ object Scalajb{
   )
 
 
-  def fromURL(url:String,distinct:Boolean) = fromJSON(Source.fromURL(url).mkString,distinct:Boolean)
+  def fromURL(url: String, distinct: Boolean) = fromJSON(Source.fromURL(url).mkString, distinct: Boolean)
 
-  def fromJSON(json:String,distinct:Boolean) = fromJValue(parse(json),distinct)
+  def fromJSON(json: String, distinct: Boolean) = fromJValue(parse(json), distinct)
 
-  def fromJValue(json:JValue,distinct:Boolean) = objects(convert(json),distinct)
+  def fromJValue(json: JValue, distinct: Boolean) = objects(convert(json), distinct)
 
   import Types._
 
-  def convert(j:JValue):Value = {
+  def convert(j: JValue): Value = {
     j match {
-      case JObject(obj)        => OBJ(obj.map{case JField(k,v) => k -> convert(v)})
+      case JObject(obj)        => OBJ(obj.map{case JField(k, v) => k -> convert(v)})
       case JArray(arr)         => ARRAY(arr.map(convert))
       case JNothing | JNull    => NULL
       case JString(s)          => STRING(s)
@@ -44,7 +44,7 @@ object Scalajb{
     }
   }
 
-  def type2t(f:Field):FIELD_DEF = {
+  def type2t(f: Field): FIELD_DEF = {
     val k = f._1
     val v =
     f._2 match {
@@ -55,7 +55,7 @@ object Scalajb{
       case BOOL(value) => CLASS.Boolean
       case OBJ(obj)    => CLASS.Obj(k)
       case ARRAY(arr)  =>
-        val r = arr.map(o => type2t((k,o))).toSet
+        val r = arr.map(o => type2t((k, o))).toSet
         if(r.size == 1){
           CLASS.Array(Right(k))
         }else{
@@ -65,17 +65,17 @@ object Scalajb{
     k -> v
   }
 
-  def distinct(classes:Set[CLAZZ]):CLAZZ = {
+  def distinct(classes: Set[CLAZZ]): CLAZZ = {
     val all = classes.flatMap{_.fields.toSet}
     val optionals = classes.flatMap{c =>
       all -- c.fields
     }
     val require = all -- optionals
-    val optionalFields = optionals.map{case (name,t) => name -> CLASS.Opt(t)}
+    val optionalFields = optionals.map{case (name, t) => name -> CLASS.Opt(t)}
     classes.head.copy(fields = require ++ optionalFields)
   }
 
-  def objects(v:Value,d:Boolean,name:String = "Unknown",depth:Int = 0):Set[CLAZZ] = {
+  def objects(v: Value, d: Boolean, name: String = "Unknown", depth: Int = 0): Set[CLAZZ] = {
     v match{
       case NULL        => Set.empty
       case STRING(_)   => Set.empty
@@ -83,13 +83,13 @@ object Scalajb{
       case INT(_)      => Set.empty
       case BOOL(_)     => Set.empty
       case OBJ(obj)    => {
-        val children = obj.flatMap{case (a,b) => objects(b,d,a,depth + 1)}.toSet
-        children + CLAZZ(name,obj.map{type2t}.toSet,depth)
+        val children = obj.flatMap{case (a, b) => objects(b, d, a, depth + 1)}.toSet
+        children + CLAZZ(name, obj.map{type2t}.toSet, depth)
       }
       case ARRAY(obj)  =>
-        val children = obj.flatMap(v => objects(v,d)).toSet
+        val children = obj.flatMap(v => objects(v, d)).toSet
         if(d){
-          val (other,oneOrZero) = children.groupBy(_.depth).map(_._2).partition{_.size > 1}
+          val (other, oneOrZero) = children.groupBy(_.depth).map(_._2).partition{_.size > 1}
           other.map(distinct).toSet ++ oneOrZero.flatten
         }else{
           children
@@ -97,45 +97,45 @@ object Scalajb{
     }
   }
 
-  type FIELD_DEF = (String,CLASS.T)
+  type FIELD_DEF = (String, CLASS.T)
 
-  case class CLAZZ(name:String,fields:Set[FIELD_DEF],depth:Int){
+  case class CLAZZ(name: String, fields: Set[FIELD_DEF], depth: Int){
     val className = name.head.toUpper + name.tail
 
     override def toString = scalaStr
 
     // TODO when over 23 fields. create abstract class or trait instead of case class ?
-    def scalaStr:String = {
-      val _fields = fields.map{case (k,v) => escapeScala(k) -> v}
+    def scalaStr: String = {
+      val _fields = fields.map{case (k, v) => escapeScala(k) -> v}
       val max = _fields.map(_._1.size).max
       val n = name.head.toUpper + name.tail
       _fields.map{
-        case (k,t) =>
+        case (k, t) =>
           val indent = " " * (max - k.size)
         "  " + k + indent + " :" + t
-      }.mkString("case class " + n + "(\n",",\n","\n)\n")
+      }.mkString("case class " + n + "(\n", ",\n", "\n)\n")
     }
 
-    def str(lang:Lang) = lang match{
+    def str(lang: Lang) = lang match{
       case JAVA  => javaStr()
       case SCALA => scalaStr
     }
 
-    def javaStr(indentStr:String = "  "):String = {
-      def i(indentLevel:Int) = indentStr * indentLevel
-      val _fields = fields.map{case (k,v) => escapeJava(k) -> v}
+    def javaStr(indentStr: String = "  "): String = {
+      def i(indentLevel: Int) = indentStr * indentLevel
+      val _fields = fields.map{case (k, v) => escapeJava(k) -> v}
 
       Iterator(
         "public class " + className + "{",
           i(1) + "public " + className + "(",
-          i(2) + _fields.map{case (k,t) =>
+          i(2) + _fields.map{case (k, t) =>
             "final " + t.javaStr + " " + k
           }.mkString(","),
             i(1) + "){",
-          _fields.map{case (k,t) =>
+          _fields.map{case (k, t) =>
             i(2) + "this." + k + " = " + k + ";"
-          }.mkString("","\n","\n" + i(1) + "}\n"),
-          _fields.map{case (k,t) =>
+          }.mkString("", "\n", "\n" + i(1) + "}\n"),
+          _fields.map{case (k, t) =>
             i(1) + "public final " + t.javaStr + " " + k + ";"
           }.mkString("\n"),
         "}\n"
@@ -143,8 +143,8 @@ object Scalajb{
     }
   }
 
-  def escapeScala(word:String) = if(reserved(word)) "`" + word + "`" else word
-  def escapeJava(word:String) = if(javaReserved(word)) "_" + word else word
+  def escapeScala(word: String) = if(reserved(word)) "`" + word + "`" else word
+  def escapeJava(word: String) = if(javaReserved(word)) "_" + word else word
 
 }
 
@@ -155,14 +155,14 @@ object Types{
   case class DOUBLE(num: Double) extends Value
   case class INT(num: Long) extends Value
   case class BOOL(value: Boolean) extends Value
-  type Field = (String,Value)
+  type Field = (String, Value)
   case class OBJ(obj: List[Field]) extends Value
   case class ARRAY(arr: List[Value]) extends Value
 }
 
 object CLASS{
   sealed abstract class T{
-    def javaStr:String = toString
+    def javaStr: String = toString
   }
   case object Unknown  extends T
   case object String   extends T
@@ -175,16 +175,16 @@ object CLASS{
   case object Boolean  extends T{
     override val javaStr = "boolean"
   }
-  case class  Opt(t:T) extends T{
+  case class  Opt(t: T) extends T{
     override val toString = "Option[" + t  + "]"
     override val javaStr = "Option<" + t + ">"
   }
-  case class  Obj(name:String) extends T{
+  case class  Obj(name: String) extends T{
     override val toString = name.head.toUpper + name.tail
   }
-  case class  Array(name:Either[Set[String],String]) extends T{
+  case class  Array(name: Either[Set[String], String]) extends T{
     override val toString = {
-      name.fold(_.mkString(" or "),identity)
+      name.fold(_.mkString(" or "), identity)
     }
   }
 }

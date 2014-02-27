@@ -22,7 +22,7 @@ class Web extends unfiltered.filter.Plan {
   )
 
   object LANG{
-    def unapply(p:Params.Map):Option[Lang] = Some(
+    def unapply(p: Params.Map): Option[Lang] = Some(
       p.get("lang").flatMap{
         _.headOption.collect{
           case "scala" => SCALA
@@ -33,7 +33,7 @@ class Web extends unfiltered.filter.Plan {
   }
 
   object DISTINCT{
-    def unapply(p:Params.Map):Option[Boolean] = Some(
+    def unapply(p: Params.Map): Option[Boolean] = Some(
       p.get("distinct").flatMap{
         _.headOption.flatMap{_.parseBoolean.toOption}
       }.getOrElse(false)
@@ -51,13 +51,13 @@ class Web extends unfiltered.filter.Plan {
       htmlPre(fromJSON(j,l,d))
   }
 
-  def fromURL(url:String,lang:Lang,distinct:Boolean) =
-    Scalajb.fromURL(url,distinct).toSeq.sortBy(_.depth).map(_.str(lang)).mkString("\n\n")
+  def fromURL(url: String, lang: Lang, distinct: Boolean) =
+    Scalajb.fromURL(url, distinct).toSeq.sortBy(_.depth).map(_.str(lang)).mkString("\n\n")
 
-  def fromJSON(j:String,lang:Lang,distinct:Boolean) =
-    Scalajb.fromJSON(j,distinct).map(_.str(lang)).mkString("\n\n")
+  def fromJSON(j: String, lang: Lang, distinct: Boolean) =
+    Scalajb.fromJSON(j, distinct).map(_.str(lang)).mkString("\n\n")
 
-  def htmlPre(string:String) =
+  def htmlPre(string: String) =
     Html(
       <html>
       <head>
