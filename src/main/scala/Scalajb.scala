@@ -1,6 +1,7 @@
 package com.github.xuwei_k.scalajb
 
-import net.liftweb.json._
+import org.json4s._
+import org.json4s.native._
 import scala.io.Source
 
 object Scalajb{
@@ -26,7 +27,7 @@ object Scalajb{
 
   def fromURL(url: String, distinct: Boolean) = fromJSON(Source.fromURL(url).mkString, distinct: Boolean)
 
-  def fromJSON(json: String, distinct: Boolean) = fromJValue(parse(json), distinct)
+  def fromJSON(json: String, distinct: Boolean) = fromJValue(JsonParser.parse(json), distinct)
 
   def fromJValue(json: JValue, distinct: Boolean) = objects(convert(json), distinct)
 
@@ -39,6 +40,7 @@ object Scalajb{
       case JNothing | JNull    => NULL
       case JString(s)          => STRING(s)
       case JDouble(num)        => DOUBLE(num)
+      case JDecimal(num)       => DOUBLE(num.toDouble)
       case JInt(num)           => INT(num.longValue)
       case JBool(value)        => BOOL(value)
     }

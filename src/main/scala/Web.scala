@@ -1,6 +1,6 @@
 package com.github.xuwei_k.scalajb
 
-import scalaz._,Scalaz._
+import scalaz._, Scalaz._
 import unfiltered.request._
 import unfiltered.response._
 import java.net.URL
