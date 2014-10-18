@@ -92,6 +92,7 @@ final class Web extends unfiltered.filter.Plan {
     Html(
       <html>
       <head>
+      <meta name="robots" content="noindex,nofollow" />
       <style type="text/css"><![CDATA[
         pre{ font-family: Consolas, Menlo, 'Liberation Mono', Courier, monospace;}
       ]]></style>
