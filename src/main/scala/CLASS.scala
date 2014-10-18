@@ -26,7 +26,11 @@ object CLASS{
   }
   final case class Array(name: Set[String] \/ String) extends T{
     override val toString = {
-      name.fold(_.mkString(" or "), identity)
+      name.fold(types =>
+        if(types.isEmpty) "List[Unknown]"
+        else types.mkString(" or "),
+        identity
+      )
     }
   }
 }
