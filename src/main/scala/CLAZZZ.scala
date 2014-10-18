@@ -13,7 +13,7 @@ final case class CLAZZ(private val name: String, private val fieldSet: Set[FIELD
   // TODO when over 23 fields. create abstract class or trait instead of case class ?
   def scalaStr: String = {
     val _fields = fields.map { case (k, v) => Scalajb.escapeScala(k) -> v}
-    val max = _fields.map(_._1.size).max
+    val max = _fields.map(_._1.size).reduceOption(_ max _).getOrElse(0)
     _fields.map {
       case (k, t) =>
         val indent = " " * (max - k.size)
