@@ -1,5 +1,6 @@
 package com.github.xuwei_k.scalajb
 
+import com.github.xuwei_k.scalajb.Scalajb.CLAZZ
 import unfiltered.request._
 import unfiltered.response._
 
@@ -19,6 +20,17 @@ class Web extends unfiltered.filter.Plan {
     Params.first ~> Params.nonempty
   )
 
+  def booleanParam(key: String, default: Boolean = false) = {
+    import scalaz.syntax.std.string._
+    new Params.Extract(params => Option(
+      params.get(key).flatMap {
+        _.headOption.flatMap {
+          _.parseBoolean.toOption
+        }
+      }.getOrElse(default)
+    ))
+  }
+
   object LANG{
     def unapply(p: Params.Map): Option[Lang] = Some(
       p.get("lang").flatMap{
@@ -30,31 +42,38 @@ class Web extends unfiltered.filter.Plan {
     )
   }
 
-  object DISTINCT{
-    import scalaz.syntax.std.string._
-    def unapply(p: Params.Map): Option[Boolean] = Some(
-      p.get("distinct").flatMap{
-        _.headOption.flatMap{_.parseBoolean.toOption}
-      }.getOrElse(false)
-    )
-  }
+  val DISTINCT = booleanParam("distinct")
+  val HOCON = booleanParam("hocon")
 
   def intent = {
-    case GET(Path("/api") & Params(LANG(l) & URL(url) & DISTINCT(d))) =>
-      ResponseString(fromURL(url,l,d))
-    case GET(Path("/api") & Params(LANG(l) & JSON(j) & DISTINCT(d))) =>
-      ResponseString(fromJSON(j,l,d))
-    case GET(Path("/") & Params(LANG(l) & URL(url) & DISTINCT(d))) =>
-      htmlPre(fromURL(url,l,d))
-    case GET(Path("/") & Params(LANG(l) & JSON(j) & DISTINCT(d))) =>
-      htmlPre(fromJSON(j,l,d))
+    case GET(Path("/api") & Params(LANG(l) & URL(url) & DISTINCT(d) & HOCON(h))) =>
+      val result = if(h) fromHOCON_URL(url, l, d) else fromURL(url, l, d)
+      ResponseString(result)
+    case GET(Path("/api") & Params(LANG(l) & JSON(j) & DISTINCT(d) & HOCON(h))) =>
+      val result = if (h) fromHOCON(j, l, d) else fromJSON(j, l, d)
+      ResponseString(result)
+    case GET(Path("/") & Params(LANG(l) & URL(url) & DISTINCT(d) & HOCON(h))) =>
+      val result = if (h) fromHOCON_URL(url, l, d) else fromURL(url, l, d)
+      htmlPre(result)
+    case GET(Path("/") & Params(LANG(l) & JSON(j) & DISTINCT(d) & HOCON(h))) =>
+      val result = if (h) fromHOCON(j, l, d) else fromJSON(j, l, d)
+      htmlPre(result)
   }
 
-  def fromURL(url: String, lang: Lang, distinct: Boolean) =
-    Scalajb.fromURL(url, distinct).toSeq.sortBy(_.depth).map(_.str(lang)).mkString("\n\n")
+  def classes2string(classes: Set[CLAZZ], lang: Lang): String =
+    classes.toSeq.sortBy(_.depth).map(_.str(lang)).mkString("\n\n")
 
-  def fromJSON(j: String, lang: Lang, distinct: Boolean) =
-    Scalajb.fromJSON(j, distinct).map(_.str(lang)).mkString("\n\n")
+  def fromURL(url: String, lang: Lang, distinct: Boolean): String =
+    classes2string(Scalajb.fromURL(url, distinct), lang)
+
+  def fromHOCON_URL(url: String, lang: Lang, distinct: Boolean): String =
+    classes2string(Scalajb.fromHOCON_URL(url, distinct), lang)
+
+  def fromJSON(j: String, lang: Lang, distinct: Boolean): String =
+    classes2string(Scalajb.fromJSON(j, distinct), lang)
+
+  def fromHOCON(j: String, lang: Lang, distinct: Boolean): String =
+    classes2string(Scalajb.fromHOCON(j, distinct), lang)
 
   def htmlPre(string: String) =
     Html(

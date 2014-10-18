@@ -25,11 +25,17 @@ object Scalajb{
   )
 
   def fromURL(url: String, distinct: Boolean) =
-    fromJSON(Source.fromURL(url).mkString, distinct: Boolean)
+    fromJSON(Source.fromURL(url).mkString, distinct)
+
+  def fromHOCON_URL(url: String, distinct: Boolean) =
+    fromHOCON(Source.fromURL(url).mkString, distinct)
 
   // TODO should not throw error
   def fromJSON(json: String, distinct: Boolean) =
     fromJValue(JsonParser.parse(json).fold(sys.error, identity), distinct)
+
+  def fromHOCON(json: String, distinct: Boolean) =
+    fromJSON(hocon2jsonString(json), distinct)
 
   def fromJValue(json: Json, distinct: Boolean) = objects(convert(json), distinct)
 
@@ -153,6 +159,10 @@ object Scalajb{
   def escapeScala(word: String) = if(reserved(word)) "`" + word + "`" else word
   def escapeJava(word: String) = if(javaReserved(word)) "_" + word else word
 
+  def hocon2jsonString(hocon: String): String = {
+    import com.typesafe.config._
+    ConfigFactory.parseString(hocon).root.render(ConfigRenderOptions.concise)
+  }
 }
 
 object Types{

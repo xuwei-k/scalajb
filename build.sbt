@@ -26,6 +26,7 @@ scalacOptions ++= (
 val unfilteredVersion = "0.8.1"
 
 libraryDependencies ++= (
+  ("com.typesafe" % "config" % "1.2.1") ::
   ("org.scalaz" %% "scalaz-core" % "7.1.0") ::
   ("io.argonaut" %% "argonaut" % "6.1-M4") ::
   ("net.databinder" %% "unfiltered-filter" % unfilteredVersion) ::
