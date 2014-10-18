@@ -52,6 +52,8 @@ final class Web extends unfiltered.filter.Plan {
   }
 
   def intent = {
+    case request @ GET(Path("/console")) =>
+      Html5(Console.value)
     case request @ GET(Params(params @ LANG(l) & DISTINCT(d) & HOCON(h) & JSON_LIB(libs) & IMPLICIT(isImplicit))) =>
       request.condEither{
         case Params(JSON(j)) =>
