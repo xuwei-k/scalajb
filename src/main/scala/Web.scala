@@ -82,7 +82,10 @@ final class Web extends unfiltered.filter.Plan {
 
   def classes2string(classes: Set[CLAZZ], lang: Lang, libs: Set[JsonLib]): String =
     classes.toSeq.sortBy(_.depth).map{ clazz =>
-      clazz.str(lang) + JsonLib.objectDef(clazz, libs)
+      clazz.str(lang) + {
+        if(lang == Lang.SCALA) JsonLib.objectDef(clazz, libs)
+        else ""
+      }
     }.mkString("\n\n")
 
   private[this] final val highlightJsURL = "//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.3/"
