@@ -1,7 +1,9 @@
 package com.github.xuwei_k.scalajb
 
-sealed abstract class Lang
+sealed abstract class Lang(val name: String)
 object Lang {
-  case object JAVA  extends Lang
-  case object SCALA extends Lang
+  val all: Set[Lang] = Set(JAVA, SCALA)
+  val map: Map[String, Lang] = all.map(x => x.name -> x)(collection.breakOut)
+  case object JAVA  extends Lang("java")
+  case object SCALA extends Lang("scala")
 }

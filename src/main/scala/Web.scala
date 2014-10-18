@@ -36,10 +36,7 @@ final class Web extends unfiltered.filter.Plan {
   object LANG{
     def unapply(p: Params.Map): Option[Lang] = Some(
       p.get("lang").flatMap{
-        _.headOption.collect{
-          case "scala" => Lang.SCALA
-          case "java"  => Lang.JAVA
-        }
+        _.headOption.flatMap(Lang.map.get)
       }.getOrElse(Lang.SCALA)
     )
   }
@@ -78,7 +75,7 @@ final class Web extends unfiltered.filter.Plan {
           case Path("/api") =>
             ResponseString(str)
           case Path("/") =>
-            htmlPre(str)
+            htmlPre(str, l)
         }.getOrElse(NotFound)
       }.merge
   }
@@ -88,17 +85,19 @@ final class Web extends unfiltered.filter.Plan {
       clazz.str(lang) + JsonLib.objectDef(clazz, libs)
     }.mkString("\n\n")
 
-  def htmlPre(string: String) =
+  private[this] final val highlightJsURL = "//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.3/"
+
+  def htmlPre(string: String, lang: Lang) =
     Html(
       <html>
       <head>
       <meta name="robots" content="noindex,nofollow" />
-      <style type="text/css"><![CDATA[
-        pre{ font-family: Consolas, Menlo, 'Liberation Mono', Courier, monospace;}
-      ]]></style>
+      <script type="application/javascript" src={highlightJsURL + "highlight.min.js"}></script>
+      <link rel="stylesheet" href={highlightJsURL + "styles/github.min.css"} />
+      <script>hljs.initHighlightingOnLoad();</script>
       </head>
       <body>
-        <pre>{string}</pre>
+        <pre><code style="font-family: Consolas, Menlo, 'Liberation Mono', Courier, monospace;" class={lang.name}>{string}</code></pre>
       </body>
       </html>
     )
