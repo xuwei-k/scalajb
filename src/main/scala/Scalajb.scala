@@ -1,7 +1,6 @@
 package com.github.xuwei_k.scalajb
 
 import argonaut._
-import scala.io.Source
 import scalaz.{-\/, \/-}
 
 object Scalajb{
@@ -109,8 +108,32 @@ object Scalajb{
 
   type FIELD_DEF = (String, CLASS.T)
 
-  def escapeScala(word: String) = if(reserved(word)) "`" + word + "`" else word
-  def escapeJava(word: String) = if(javaReserved(word)) "_" + word else word
+
+  def toCamelUpper(word: String): String = {
+    toCamel(word).toList match {
+      case h :: t => (h.toUpper :: t).mkString
+      case x => word
+    }
+  }
+
+  def toCamel(word: String): String = {
+    def function(words: Array[String]): String = {
+      words.filter(_.nonEmpty).toList match {
+        case head :: tail =>
+          head :: tail.map{_.toList match{
+            case h :: t => (h.toUpper :: t).mkString
+            case x => x.mkString
+          }}
+        case other =>
+          other
+      }
+    }.mkString
+
+    function(function(word.split('-')).split('_'))
+  }
+
+  def escapeScala(word: String) = if(reserved(word)) "`" + word + "`" else toCamel(word)
+  def escapeJava(word: String) = if(javaReserved(word)) "_" + word else toCamel(word)
 
   def hocon2jsonString(hocon: String): String = {
     import com.typesafe.config._

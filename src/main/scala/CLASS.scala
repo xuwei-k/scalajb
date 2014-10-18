@@ -22,7 +22,7 @@ object CLASS{
     override val javaStr = "Option<" + t + ">"
   }
   case class  Obj(name: String) extends T{
-    override val toString = name.head.toUpper + name.tail
+    override val toString = Scalajb.toCamelUpper(name)
   }
   case class  Array(name: Set[String] \/ String) extends T{
     override val toString = {

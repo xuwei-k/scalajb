@@ -2,8 +2,9 @@ package com.github.xuwei_k.scalajb
 
 import com.github.xuwei_k.scalajb.Scalajb.FIELD_DEF
 
-final case class CLAZZ(name: String, private val fieldSet: Set[FIELD_DEF], depth: Int) {
-  val className = name.head.toUpper + name.tail
+final case class CLAZZ(private val name: String, private val fieldSet: Set[FIELD_DEF], depth: Int) {
+  val className = Scalajb.toCamel(name)
+  val classNameUpper = Scalajb.toCamelUpper(name)
 
   lazy val fields: Seq[FIELD_DEF] = fieldSet.toSeq.sortBy(_._1)
 
@@ -13,12 +14,11 @@ final case class CLAZZ(name: String, private val fieldSet: Set[FIELD_DEF], depth
   def scalaStr: String = {
     val _fields = fields.map { case (k, v) => Scalajb.escapeScala(k) -> v}
     val max = _fields.map(_._1.size).max
-    val n = name.head.toUpper + name.tail
     _fields.map {
       case (k, t) =>
         val indent = " " * (max - k.size)
         "  " + k + indent + " :" + t
-    }.mkString("final case class " + n + "(\n", ",\n", "\n)\n")
+    }.mkString("final case class " + classNameUpper + "(\n", ",\n", "\n)\n")
   }
 
   def str(lang: Lang) = lang match {
@@ -31,8 +31,8 @@ final case class CLAZZ(name: String, private val fieldSet: Set[FIELD_DEF], depth
     val _fields = fields.map { case (k, v) => Scalajb.escapeJava(k) -> v}
 
     Iterator(
-      "public class " + className + "{",
-      i(1) + "public " + className + "(",
+      "public class " + classNameUpper + "{",
+      i(1) + "public " + classNameUpper + "(",
       i(2) + _fields.map { case (k, t) =>
         "final " + t.javaStr + " " + k
       }.mkString(","),
