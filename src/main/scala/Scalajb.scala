@@ -5,6 +5,20 @@ import com.typesafe.config.{ConfigRenderOptions, ConfigFactory, ConfigException}
 import scalaz.{\/, -\/, \/-}
 
 object Scalajb{
+
+  def codecJsonFromStringEnum[A](decoder: Map[String, A], encoder: A => String, error: String => String): CodecJson[A] =
+    CodecJson.derived[A](
+      EncodeJson.apply(a => Json.jString(encoder(a)))
+      ,
+      DecodeJson(cursor =>
+        implicitly[DecodeJson[String]].decode(cursor).flatMap{ str =>
+          decoder.get(str).fold(
+            DecodeResult.fail[A](error(str), cursor.history)
+          )(DecodeResult.ok)
+        }
+      )
+    )
+
   val reserved = Set(
     "abstract", "case", "catch", "class", "def",
     "do", "else", "extends", "false", "final", "finally",

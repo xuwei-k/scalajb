@@ -1,5 +1,6 @@
 package com.github.xuwei_k.scalajb
 
+import argonaut.CodecJson
 import com.github.xuwei_k.scalajb.Scalajb.FIELD_DEF
 
 sealed abstract class JsonLib(val value: String){
@@ -7,6 +8,7 @@ sealed abstract class JsonLib(val value: String){
 }
 
 object JsonLib {
+
   private[this] val quote: String => String =
     "\"" + _ + "\""
 
@@ -43,6 +45,9 @@ s"""  ${implicitMod(isImplicit)} val ${clazz.className}CodecJson: CodecJson[${cl
 
   val all: Set[JsonLib] = Set(Argonaut, Play)
   val map: Map[String, JsonLib] = all.map(x => x.value -> x)(collection.breakOut)
+
+  implicit val instance: CodecJson[JsonLib] =
+    Scalajb.codecJsonFromStringEnum(JsonLib.map, _.value, _ + " is not valid json library name")
 
   def objectDef(clazz: CLAZZ, libs: Set[JsonLib], isImplicit: Boolean): String = s"""
 object ${clazz.classNameUpper} {

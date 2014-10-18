@@ -1,10 +1,10 @@
 package com.github.xuwei_k.scalajb
 
-import unfiltered.request._
-import unfiltered.response._
-
+import argonaut.{JsonParser, Json}
 import scala.io.Source
 import scalaz.{\/-, \/}
+import unfiltered.request._
+import unfiltered.response._
 
 final class Web extends unfiltered.filter.Plan {
   import Web._
@@ -17,10 +17,10 @@ final class Web extends unfiltered.filter.Plan {
         case Params(URL(url)) =>
           Source.fromURL(url, "UTF-8").mkString
       }(
-        ResponseString("you should specify json or url parameter") ~> BadRequest
+        ResponseString("you should specify " + Param.JSON + " or url parameter") ~> BadRequest
       ).map{ j =>
         lazy val result = {
-          val name = params.get("top_object_name").flatMap(_.headOption.filter(_.nonEmpty))
+          val name = params.get(Param.TOP_OBJECT_NAME).flatMap(_.headOption.filter(_.nonEmpty))
           for{
             jsonString <- if(h) {
               Scalajb.hocon2jsonString(j).leftMap(error =>
@@ -40,6 +40,31 @@ final class Web extends unfiltered.filter.Plan {
             htmlPre(result.merge, l) ~> status
         }.getOrElse(NotFound)
       }.merge
+    case request @ POST(Path("/api")) =>
+
+      val SUCCESS = "success"
+
+      (for{
+        json <- JsonParser.parse(Body.string(request))
+        param <- json.as[Param].toDisjunction.leftMap(_.toString())
+        result <- Scalajb.run(
+          param.jsonString, param.topObjectName, param.distinct, param.jsonLibrary, param.lang, param.isImplicit
+        )
+      } yield {
+        ResponseString(
+          Json.obj(
+            SUCCESS -> Json.jTrue,
+            "result" -> Json.jString(result)
+          ).toString
+        ) ~> JsonContent
+      }).leftMap( error =>
+        ResponseString(
+          Json.obj(
+            SUCCESS -> Json.jFalse,
+            "error" -> Json.jString(error)
+          ).toString
+        ) ~> JsonContent ~> BadRequest
+      ).merge
   }
 }
 
@@ -51,15 +76,15 @@ object Web {
   )
 
   object JSON extends Params.Extract(
-    "json",
+    Param.JSON,
     Params.first ~> Params.nonempty
   )
 
   object JSON_LIB extends Params.Extract(
-    "json_library", values => Some(values.flatMap(JsonLib.map.get).toSet)
+    Param.JSON_LIBRARY, values => Some(values.flatMap(JsonLib.map.get).toSet)
   )
 
-  def booleanParam(key: String, default: Boolean = false) = {
+  def booleanParam(key: String, default: Boolean) = {
     import scalaz.syntax.std.string._
     new Params.Extract(params => Option(
       params.get(key).flatMap {
@@ -72,15 +97,15 @@ object Web {
 
   object LANG{
     def unapply(p: Params.Map): Option[Lang] = Some(
-      p.get("lang").flatMap{
+      p.get(Param.LANG).flatMap{
         _.headOption.flatMap(Lang.map.get)
       }.getOrElse(Lang.SCALA)
     )
   }
 
-  val DISTINCT = booleanParam("distinct")
-  val HOCON = booleanParam("hocon")
-  val IMPLICIT = booleanParam("implicit", true)
+  val DISTINCT = booleanParam(Param.DISTINCT, Param.Default.distinct)
+  val HOCON = booleanParam("hocon", false)
+  val IMPLICIT = booleanParam(Param.IMPLICIT, Param.Default.isImplicit)
 
   private implicit class CondEither[A](private val value: A) {
     import scalaz.syntax.std.option._
