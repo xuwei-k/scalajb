@@ -25,7 +25,7 @@ object JsonLib {
     def instance(clazz: CLAZZ): String = s"""
   val ${clazz.name}Format: Format[${clazz.name}] = (
     ${clazz.fields.map(f).mkString(" and\n    ")}
-  )(${clazz.name}.apply _, ${clazz.name}.unapply _)
+  )(${clazz.name}.apply _, Function.unlift(${clazz.name}.unapply))
 """
   }
 
