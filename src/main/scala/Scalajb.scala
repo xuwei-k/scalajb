@@ -85,7 +85,7 @@ object Scalajb{
     }
     val require = all -- optionals
     val optionalFields = optionals.map{case (name, t) => name -> CLASS.Opt(t)}
-    classes.head.copy(fields = require ++ optionalFields)
+    classes.head.copy(fieldSet = require ++ optionalFields)
   }
 
   def objects(v: Value, d: Boolean, name: String = "Unknown", depth: Int = 0): Set[CLAZZ] = {

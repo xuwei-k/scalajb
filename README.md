@@ -5,6 +5,6 @@
 http://scalajb.appspot.com
 
 ### sample
-* https://api.github.com/repos/xuwei-k/scalajb => http://scalajb.appspot.com/?url=https://api.github.com/repos/xuwei-k/scalajb
+* <https://api.github.com/repos/xuwei-k/scalajb> => <http://scalajb.appspot.com/?json_library=play&json_library=argonaut&url=https://api.github.com/repos/xuwei-k/scalajb>
 
-* <https://github.com/akka/akka/blob/v2.3.6/akka-actor/src/main/resources/reference.conf> => <http://scalajb.appspot.com/?hocon=true&url=https://raw.githubusercontent.com/akka/akka/v2.3.6/akka-actor/src/main/resources/reference.conf>
+* <https://github.com/akka/akka/blob/v2.3.6/akka-actor/src/main/resources/reference.conf> => <http://scalajb.appspot.com/?hocon=true&json_library=play&json_library=argonaut&url=https://raw.githubusercontent.com/akka/akka/v2.3.6/akka-actor/src/main/resources/reference.conf>

@@ -61,7 +61,7 @@ object HOCONSpec extends SpecBase {
     def test(param: (String, String)) = {
       forall(List("", "api")) { path =>
         forall(urls) { url =>
-          val req = Scalaj(path).params("url" -> url, "hocon" -> "true", param)
+          val req = Scalaj(path).params("url" -> url, "hocon" -> "true", "json_library" -> "play", "json_library" -> "argonaut", param)
           req.responseCode must_== 200
           val str = req.asString
           println(str)

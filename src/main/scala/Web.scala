@@ -16,7 +16,7 @@ final class Web extends unfiltered.filter.Plan {
   )
 
   object JSON_LIB extends Params.Extract(
-    "json_library", values => Some(values.flatMap(JsonLib.map.get))
+    "json_library", values => Some(values.flatMap(JsonLib.map.get).toSet)
   )
 
   def booleanParam(key: String, default: Boolean = false) = {
@@ -45,34 +45,37 @@ final class Web extends unfiltered.filter.Plan {
   val HOCON = booleanParam("hocon")
 
   def intent = {
-    case GET(Path("/api") & Params(LANG(l) & URL(url) & DISTINCT(d) & HOCON(h))) =>
-      val result = if(h) fromHOCON_URL(url, l, d) else fromURL(url, l, d)
+    case GET(Path("/api") & Params(LANG(l) & URL(url) & DISTINCT(d) & HOCON(h) & JSON_LIB(libs))) =>
+      val result = if(h) fromHOCON_URL(url, l, d, libs) else fromURL(url, l, d, libs)
       ResponseString(result)
-    case GET(Path("/api") & Params(LANG(l) & JSON(j) & DISTINCT(d) & HOCON(h))) =>
-      val result = if (h) fromHOCON(j, l, d) else fromJSON(j, l, d)
+    case GET(Path("/api") & Params(LANG(l) & JSON(j) & DISTINCT(d) & HOCON(h) & JSON_LIB(libs))) =>
+      val result = if (h) fromHOCON(j, l, d, libs) else fromJSON(j, l, d, libs)
       ResponseString(result)
-    case GET(Path("/") & Params(LANG(l) & URL(url) & DISTINCT(d) & HOCON(h))) =>
-      val result = if (h) fromHOCON_URL(url, l, d) else fromURL(url, l, d)
+    case GET(Path("/") & Params(LANG(l) & URL(url) & DISTINCT(d) & HOCON(h) & JSON_LIB(libs))) =>
+      val result = if (h) fromHOCON_URL(url, l, d, libs) else fromURL(url, l, d, libs)
       htmlPre(result)
-    case GET(Path("/") & Params(LANG(l) & JSON(j) & DISTINCT(d) & HOCON(h))) =>
-      val result = if (h) fromHOCON(j, l, d) else fromJSON(j, l, d)
+    case GET(Path("/") & Params(LANG(l) & JSON(j) & DISTINCT(d) & HOCON(h) & JSON_LIB(libs))) =>
+      val result = if (h) fromHOCON(j, l, d, libs) else fromJSON(j, l, d, libs)
       htmlPre(result)
   }
 
-  def classes2string(classes: Set[CLAZZ], lang: Lang): String =
-    classes.toSeq.sortBy(_.depth).map(_.str(lang)).mkString("\n\n")
+  def classes2string(classes: Set[CLAZZ], lang: Lang, libs: Set[JsonLib]): String =
+    classes.toSeq.sortBy(_.depth).map{ clazz =>
+      clazz.str(lang) + JsonLib.objectDef(clazz, libs)
+    }.mkString("\n\n")
 
-  def fromURL(url: String, lang: Lang, distinct: Boolean): String =
-    classes2string(Scalajb.fromURL(url, distinct), lang)
+  def fromURL(url: String, lang: Lang, distinct: Boolean, libs: Set[JsonLib]): String = {
+    classes2string(Scalajb.fromURL(url, distinct), lang, libs)
+  }
 
-  def fromHOCON_URL(url: String, lang: Lang, distinct: Boolean): String =
-    classes2string(Scalajb.fromHOCON_URL(url, distinct), lang)
+  def fromHOCON_URL(url: String, lang: Lang, distinct: Boolean, libs: Set[JsonLib]): String =
+    classes2string(Scalajb.fromHOCON_URL(url, distinct), lang, libs)
 
-  def fromJSON(j: String, lang: Lang, distinct: Boolean): String =
-    classes2string(Scalajb.fromJSON(j, distinct), lang)
+  def fromJSON(j: String, lang: Lang, distinct: Boolean, libs: Set[JsonLib]): String =
+    classes2string(Scalajb.fromJSON(j, distinct), lang, libs)
 
-  def fromHOCON(j: String, lang: Lang, distinct: Boolean): String =
-    classes2string(Scalajb.fromHOCON(j, distinct), lang)
+  def fromHOCON(j: String, lang: Lang, distinct: Boolean, libs: Set[JsonLib]): String =
+    classes2string(Scalajb.fromHOCON(j, distinct), lang, libs)
 
   def htmlPre(string: String) =
     Html(

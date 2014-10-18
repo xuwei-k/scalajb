@@ -2,8 +2,10 @@ package com.github.xuwei_k.scalajb
 
 import com.github.xuwei_k.scalajb.Scalajb.FIELD_DEF
 
-final case class CLAZZ(name: String, fields: Set[FIELD_DEF], depth: Int) {
+final case class CLAZZ(name: String, private val fieldSet: Set[FIELD_DEF], depth: Int) {
   val className = name.head.toUpper + name.tail
+
+  lazy val fields: Seq[FIELD_DEF] = fieldSet.toSeq.sortBy(_._1)
 
   override def toString = scalaStr
 
