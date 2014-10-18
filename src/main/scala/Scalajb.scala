@@ -25,10 +25,10 @@ object Scalajb{
   )
 
   def fromURL(url: String, distinct: Boolean) =
-    fromJSON(Source.fromURL(url).mkString, distinct)
+    fromJSON(Source.fromURL(url, "UTF-8").mkString, distinct)
 
   def fromHOCON_URL(url: String, distinct: Boolean) =
-    fromHOCON(Source.fromURL(url).mkString, distinct)
+    fromHOCON(Source.fromURL(url, "UTF-8").mkString, distinct)
 
   // TODO should not throw error
   def fromJSON(json: String, distinct: Boolean) =
