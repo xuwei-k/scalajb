@@ -1,7 +1,7 @@
 package com.github.xuwei_k.scalajb
 
 import argonaut._
-import scalaz.{-\/, \/-}
+import scalaz.{\/, -\/, \/-}
 
 object Scalajb{
   val reserved = Set(
@@ -23,14 +23,25 @@ object Scalajb{
     "strictfp", "throw" ,"assert" , "enum" ,"const" ,"goto","throws", "transient","volatile"
   )
 
-  // TODO should not throw error
-  def fromJSON(json: String, distinct: Boolean, topObjectName: Option[String]) =
-    fromJValue(JsonParser.parse(json).fold(sys.error, identity), distinct, topObjectName)
+  def run(jsonString: String, topObjectName: Option[String], distinct: Boolean, libs: Set[JsonLib], lang: Lang, isImplicit: Boolean): String \/ String =
+    Scalajb.fromJSON(jsonString, distinct, topObjectName).map(classes =>
+      classes2string(classes, lang, libs, isImplicit)
+    )
 
-  def fromHOCON(json: String, distinct: Boolean, topObjectName: Option[String]) =
-    fromJSON(hocon2jsonString(json), distinct, topObjectName)
+  def classes2string(classes: Set[CLAZZ], lang: Lang, libs: Set[JsonLib], isImplicit: Boolean): String =
+    classes.toSeq.sortBy(_.depth).map{ clazz =>
+      clazz.str(lang) + {
+        if(lang == Lang.SCALA) JsonLib.objectDef(clazz, libs, isImplicit)
+        else ""
+      }
+    }.mkString("\n\n")
 
-  def fromJValue(json: Json, distinct: Boolean, topObjectName: Option[String]) =
+  def fromJSON(json: String, distinct: Boolean, topObjectName: Option[String]): String \/ Set[CLAZZ] =
+    JsonParser.parse(json).map(jsonObj =>
+      fromJValue(jsonObj, distinct, topObjectName)
+    )
+
+  def fromJValue(json: Json, distinct: Boolean, topObjectName: Option[String]): Set[CLAZZ] =
     objects(convert(json), distinct, topObjectName.getOrElse(unknownClassName))
 
   import com.github.xuwei_k.scalajb.Types._

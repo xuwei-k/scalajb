@@ -7,6 +7,38 @@ import scala.io.Source
 import scalaz.\/
 
 final class Web extends unfiltered.filter.Plan {
+  import Web._
+
+  def intent = {
+    case request @ GET(Params(params @ LANG(l) & DISTINCT(d) & HOCON(h) & JSON_LIB(libs) & IMPLICIT(isImplicit))) =>
+      request.condEither{
+        case Params(JSON(j)) =>
+          j
+        case Params(URL(url)) =>
+          Source.fromURL(url, "UTF-8").mkString
+      }(
+        ResponseString("you should specify json or url parameter") ~> BadRequest
+      ).map{ j =>
+
+        lazy val result = {
+          val name = params.get("top_object_name").flatMap(_.headOption.filter(_.nonEmpty))
+          val jsonString = if(h) Scalajb.hocon2jsonString(j) else j
+          Scalajb.run(jsonString, name, d, libs, l, isImplicit)
+        }
+
+        lazy val status = if(result.isRight) Ok else BadRequest
+
+        PartialFunction.condOpt(request){
+          case Path("/api") =>
+            ResponseString(result.merge) ~> status
+          case Path("/") =>
+            htmlPre(result.merge, l) ~> status
+        }.getOrElse(NotFound)
+      }.merge
+  }
+}
+
+object Web {
 
   object URL extends Params.Extract(
     "url",
@@ -50,44 +82,6 @@ final class Web extends unfiltered.filter.Plan {
     def condEither[B, C](f: PartialFunction[A, B])(alternative: => C): C \/ B =
       f.lift(value).toRightDisjunction(alternative)
   }
-
-  def intent = {
-    case request @ GET(Params(params @ LANG(l) & DISTINCT(d) & HOCON(h) & JSON_LIB(libs) & IMPLICIT(isImplicit))) =>
-      request.condEither{
-        case Params(JSON(j)) =>
-          j
-        case Params(URL(url)) =>
-          Source.fromURL(url, "UTF-8").mkString
-      }(
-        ResponseString("you should specify json or url parameter") ~> BadRequest
-      ).map{ j =>
-
-        def str = {
-          val name = params.get("top_object_name").flatMap(_.headOption.filter(_.nonEmpty))
-          val classes = if (h) {
-            Scalajb.fromHOCON(j, d, name)
-          } else {
-            Scalajb.fromJSON(j, d, name)
-          }
-          classes2string(classes, l, libs, isImplicit)
-        }
-
-        PartialFunction.condOpt(request){
-          case Path("/api") =>
-            ResponseString(str)
-          case Path("/") =>
-            htmlPre(str, l)
-        }.getOrElse(NotFound)
-      }.merge
-  }
-
-  def classes2string(classes: Set[CLAZZ], lang: Lang, libs: Set[JsonLib], isImplicit: Boolean): String =
-    classes.toSeq.sortBy(_.depth).map{ clazz =>
-      clazz.str(lang) + {
-        if(lang == Lang.SCALA) JsonLib.objectDef(clazz, libs, isImplicit)
-        else ""
-      }
-    }.mkString("\n\n")
 
   private[this] final val highlightJsURL = "//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.3/"
 
