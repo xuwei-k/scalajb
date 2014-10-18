@@ -24,20 +24,15 @@ object Scalajb{
     "strictfp", "throw" ,"assert" , "enum" ,"const" ,"goto","throws", "transient","volatile"
   )
 
-  def fromURL(url: String, distinct: Boolean) =
-    fromJSON(Source.fromURL(url, "UTF-8").mkString, distinct)
-
-  def fromHOCON_URL(url: String, distinct: Boolean) =
-    fromHOCON(Source.fromURL(url, "UTF-8").mkString, distinct)
-
   // TODO should not throw error
-  def fromJSON(json: String, distinct: Boolean) =
-    fromJValue(JsonParser.parse(json).fold(sys.error, identity), distinct)
+  def fromJSON(json: String, distinct: Boolean, topObjectName: Option[String]) =
+    fromJValue(JsonParser.parse(json).fold(sys.error, identity), distinct, topObjectName)
 
-  def fromHOCON(json: String, distinct: Boolean) =
-    fromJSON(hocon2jsonString(json), distinct)
+  def fromHOCON(json: String, distinct: Boolean, topObjectName: Option[String]) =
+    fromJSON(hocon2jsonString(json), distinct, topObjectName)
 
-  def fromJValue(json: Json, distinct: Boolean) = objects(convert(json), distinct)
+  def fromJValue(json: Json, distinct: Boolean, topObjectName: Option[String]) =
+    objects(convert(json), distinct, topObjectName.getOrElse(unknownClassName))
 
   import com.github.xuwei_k.scalajb.Types._
 
@@ -88,7 +83,9 @@ object Scalajb{
     classes.head.copy(fieldSet = require ++ optionalFields)
   }
 
-  def objects(v: Value, d: Boolean, name: String = "Unknown", depth: Int = 0): Set[CLAZZ] = {
+  final val unknownClassName = "Unknown"
+
+  def objects(v: Value, d: Boolean, name: String = unknownClassName, depth: Int = 0): Set[CLAZZ] = {
     v match{
       case NULL        => Set.empty
       case STRING(_)   => Set.empty

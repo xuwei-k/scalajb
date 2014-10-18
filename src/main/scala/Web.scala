@@ -3,6 +3,9 @@ package com.github.xuwei_k.scalajb
 import unfiltered.request._
 import unfiltered.response._
 
+import scala.io.Source
+import scalaz.\/
+
 final class Web extends unfiltered.filter.Plan {
 
   object URL extends Params.Extract(
@@ -44,38 +47,46 @@ final class Web extends unfiltered.filter.Plan {
   val DISTINCT = booleanParam("distinct")
   val HOCON = booleanParam("hocon")
 
+  private implicit class CondEither[A](private val value: A) {
+    import scalaz.syntax.std.option._
+    def condEither[B, C](f: PartialFunction[A, B])(alternative: => C): C \/ B =
+      f.lift(value).toRightDisjunction(alternative)
+  }
+
   def intent = {
-    case GET(Path("/api") & Params(LANG(l) & URL(url) & DISTINCT(d) & HOCON(h) & JSON_LIB(libs))) =>
-      val result = if(h) fromHOCON_URL(url, l, d, libs) else fromURL(url, l, d, libs)
-      ResponseString(result)
-    case GET(Path("/api") & Params(LANG(l) & JSON(j) & DISTINCT(d) & HOCON(h) & JSON_LIB(libs))) =>
-      val result = if (h) fromHOCON(j, l, d, libs) else fromJSON(j, l, d, libs)
-      ResponseString(result)
-    case GET(Path("/") & Params(LANG(l) & URL(url) & DISTINCT(d) & HOCON(h) & JSON_LIB(libs))) =>
-      val result = if (h) fromHOCON_URL(url, l, d, libs) else fromURL(url, l, d, libs)
-      htmlPre(result)
-    case GET(Path("/") & Params(LANG(l) & JSON(j) & DISTINCT(d) & HOCON(h) & JSON_LIB(libs))) =>
-      val result = if (h) fromHOCON(j, l, d, libs) else fromJSON(j, l, d, libs)
-      htmlPre(result)
+    case request @ GET(Params(params @ LANG(l) & DISTINCT(d) & HOCON(h) & JSON_LIB(libs))) =>
+      request.condEither{
+        case Params(JSON(j)) =>
+          j
+        case Params(URL(url)) =>
+          Source.fromURL(url, "UTF-8").mkString
+      }(
+        ResponseString("you should specify json or url parameter") ~> BadRequest
+      ).map{ j =>
+
+        def str = {
+          val name = params.get("top_object_name").flatMap(_.headOption.filter(_.nonEmpty))
+          val classes = if (h) {
+            Scalajb.fromHOCON(j, d, name)
+          } else {
+            Scalajb.fromJSON(j, d, name)
+          }
+          classes2string(classes, l, libs)
+        }
+
+        PartialFunction.condOpt(request){
+          case Path("/api") =>
+            ResponseString(str)
+          case Path("/") =>
+            htmlPre(str)
+        }.getOrElse(NotFound)
+      }.merge
   }
 
   def classes2string(classes: Set[CLAZZ], lang: Lang, libs: Set[JsonLib]): String =
     classes.toSeq.sortBy(_.depth).map{ clazz =>
       clazz.str(lang) + JsonLib.objectDef(clazz, libs)
     }.mkString("\n\n")
-
-  def fromURL(url: String, lang: Lang, distinct: Boolean, libs: Set[JsonLib]): String = {
-    classes2string(Scalajb.fromURL(url, distinct), lang, libs)
-  }
-
-  def fromHOCON_URL(url: String, lang: Lang, distinct: Boolean, libs: Set[JsonLib]): String =
-    classes2string(Scalajb.fromHOCON_URL(url, distinct), lang, libs)
-
-  def fromJSON(j: String, lang: Lang, distinct: Boolean, libs: Set[JsonLib]): String =
-    classes2string(Scalajb.fromJSON(j, distinct), lang, libs)
-
-  def fromHOCON(j: String, lang: Lang, distinct: Boolean, libs: Set[JsonLib]): String =
-    classes2string(Scalajb.fromHOCON(j, distinct), lang, libs)
 
   def htmlPre(string: String) =
     Html(
