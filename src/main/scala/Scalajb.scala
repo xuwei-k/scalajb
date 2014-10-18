@@ -1,6 +1,7 @@
 package com.github.xuwei_k.scalajb
 
 import argonaut._
+import com.typesafe.config.{ConfigRenderOptions, ConfigFactory, ConfigException}
 import scalaz.{\/, -\/, \/-}
 
 object Scalajb{
@@ -146,9 +147,9 @@ object Scalajb{
   def escapeScala(word: String) = if(reserved(word)) "`" + word + "`" else toCamel(word)
   def escapeJava(word: String) = if(javaReserved(word)) "_" + word else toCamel(word)
 
-  def hocon2jsonString(hocon: String): String = {
-    import com.typesafe.config._
-    ConfigFactory.parseString(hocon).root.render(ConfigRenderOptions.concise)
-  }
+  def hocon2jsonString(hocon: String): ConfigException \/ String =
+    \/.fromTryCatchThrowable[String, ConfigException] {
+      ConfigFactory.parseString(hocon).root.render(ConfigRenderOptions.concise)
+    }
 }
 

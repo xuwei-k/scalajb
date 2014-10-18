@@ -4,7 +4,7 @@ import unfiltered.request._
 import unfiltered.response._
 
 import scala.io.Source
-import scalaz.\/
+import scalaz.{\/-, \/}
 
 final class Web extends unfiltered.filter.Plan {
   import Web._
@@ -19,11 +19,16 @@ final class Web extends unfiltered.filter.Plan {
       }(
         ResponseString("you should specify json or url parameter") ~> BadRequest
       ).map{ j =>
-
         lazy val result = {
           val name = params.get("top_object_name").flatMap(_.headOption.filter(_.nonEmpty))
-          val jsonString = if(h) Scalajb.hocon2jsonString(j) else j
-          Scalajb.run(jsonString, name, d, libs, l, isImplicit)
+          for{
+            jsonString <- if(h) {
+              Scalajb.hocon2jsonString(j).leftMap(error =>
+                error.toString + error.getStackTrace.mkString("\n\n", "\n", "")
+              )
+            } else \/-(j)
+            * <- Scalajb.run(jsonString, name, d, libs, l, isImplicit)
+          } yield *
         }
 
         lazy val status = if(result.isRight) Ok else BadRequest
