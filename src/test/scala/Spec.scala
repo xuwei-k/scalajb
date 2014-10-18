@@ -1,32 +1,32 @@
 package com.github.xuwei_k.scalajb
 
-import scalaj.http.{Http => ScalajHttp,_}
-import org.specs.Specification
+import scalaj.http.{Http => ScalajHttp, _}
+import org.specs2.mutable.Specification
 
-class Spec extends Specification with unfiltered.spec.jetty.Served {
+final class Spec extends Specification with unfiltered.specs2.jetty.Served {
 
-  def setup = { _ .filter(new Web) }
+  override def setup = { _ .filter(new Web) }
 
-  val OPTIONS = List( HttpOptions.connTimeout(30000) , HttpOptions.readTimeout(30000) )
+  val OPTIONS = List(HttpOptions.connTimeout(30000), HttpOptions.readTimeout(30000))
 
   def Scalaj(path:String) =
     ScalajHttp("http://localhost:" + port + "/" + path ).options(OPTIONS)
 
-  val urls = Seq(
+  private[this] val urls = Seq(
     "https://api.github.com/repos/xuwei-k/scalajb",
     "https://api.github.com/users/xuwei-k/repos"
   )
 
   "Web" should {
-    def test(param:(String,String))(funcs:(String => Boolean) *) = {
+    def test(param: (String, String))(funcs: (String => Boolean) *) = {
 
-      List("","api").foreach{ path =>
-        urls.foreach{url =>
+      forall(List("", "api")){ path =>
+        forall(urls){url =>
           val req = Scalaj(path).params("url"->url,param)
           req.responseCode must_== 200
           val str = req.asString
           println(str)
-          funcs.foreach{ f =>
+          forall(funcs){ f =>
             f(str) must beTrue
           }
         }

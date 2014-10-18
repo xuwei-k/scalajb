@@ -1,0 +1,1 @@
+sbtappengine.Plugin.webSettings
