@@ -3,18 +3,22 @@ package com.github.xuwei_k.scalajb
 import com.github.xuwei_k.scalajb.Scalajb.FIELD_DEF
 
 sealed abstract class JsonLib(val value: String){
-  def instance(clazz: CLAZZ): String
+  def instance(clazz: CLAZZ, isImplicit: Boolean): String
 }
 
 object JsonLib {
   private[this] val quote: String => String =
     "\"" + _ + "\""
 
+  private def implicitMod(isImplicit: Boolean): String =
+    if(isImplicit) "implicit" else ""
+
   case object Argonaut extends JsonLib("argonaut"){
-    def instance(clazz: CLAZZ): String = s"""
-  val ${clazz.className}CodecJson: CodecJson[${clazz.classNameUpper}] =
+    def instance(clazz: CLAZZ, isImplicit: Boolean): String = {
+s"""  ${implicitMod(isImplicit)} val ${clazz.className}CodecJson: CodecJson[${clazz.classNameUpper}] =
     CodecJson.casecodec${clazz.fields.size}(apply, unapply)(
 """ + clazz.fields.map(_._1).map(quote).mkString("      ", ",\n      ", "\n    )")
+    }
   }
 
   case object Play extends JsonLib("play"){
@@ -22,8 +26,8 @@ object JsonLib {
       s"""(__ \\ "$key").format[$tpe]"""
     }
 
-    def instance(clazz: CLAZZ): String = {
-      val valdef = s"""val ${clazz.className}Format: OFormat[${clazz.classNameUpper}]"""
+    def instance(clazz: CLAZZ, isImplicit: Boolean): String = {
+      val valdef = s"""${implicitMod(isImplicit)} val ${clazz.className}Format: OFormat[${clazz.classNameUpper}]"""
       val inmap = s"""${clazz.classNameUpper}.apply _, Function.unlift(${clazz.classNameUpper}.unapply)"""
 
       if (clazz.fields.length == 1) {
@@ -40,10 +44,10 @@ object JsonLib {
   val all: Set[JsonLib] = Set(Argonaut, Play)
   val map: Map[String, JsonLib] = all.map(x => x.value -> x)(collection.breakOut)
 
-  def objectDef(clazz: CLAZZ, libs: Set[JsonLib]): String = s"""
+  def objectDef(clazz: CLAZZ, libs: Set[JsonLib], isImplicit: Boolean): String = s"""
 object ${clazz.classNameUpper} {
 
-${libs.map(_.instance(clazz)).mkString("\n\n")}
+${libs.map(_.instance(clazz, isImplicit)).mkString("\n\n")}
 
 }
 """

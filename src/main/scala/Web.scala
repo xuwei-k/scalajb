@@ -43,6 +43,7 @@ final class Web extends unfiltered.filter.Plan {
 
   val DISTINCT = booleanParam("distinct")
   val HOCON = booleanParam("hocon")
+  val IMPLICIT = booleanParam("implicit", true)
 
   private implicit class CondEither[A](private val value: A) {
     import scalaz.syntax.std.option._
@@ -51,7 +52,7 @@ final class Web extends unfiltered.filter.Plan {
   }
 
   def intent = {
-    case request @ GET(Params(params @ LANG(l) & DISTINCT(d) & HOCON(h) & JSON_LIB(libs))) =>
+    case request @ GET(Params(params @ LANG(l) & DISTINCT(d) & HOCON(h) & JSON_LIB(libs) & IMPLICIT(isImplicit))) =>
       request.condEither{
         case Params(JSON(j)) =>
           j
@@ -68,7 +69,7 @@ final class Web extends unfiltered.filter.Plan {
           } else {
             Scalajb.fromJSON(j, d, name)
           }
-          classes2string(classes, l, libs)
+          classes2string(classes, l, libs, isImplicit)
         }
 
         PartialFunction.condOpt(request){
@@ -80,10 +81,10 @@ final class Web extends unfiltered.filter.Plan {
       }.merge
   }
 
-  def classes2string(classes: Set[CLAZZ], lang: Lang, libs: Set[JsonLib]): String =
+  def classes2string(classes: Set[CLAZZ], lang: Lang, libs: Set[JsonLib], isImplicit: Boolean): String =
     classes.toSeq.sortBy(_.depth).map{ clazz =>
       clazz.str(lang) + {
-        if(lang == Lang.SCALA) JsonLib.objectDef(clazz, libs)
+        if(lang == Lang.SCALA) JsonLib.objectDef(clazz, libs, isImplicit)
         else ""
       }
     }.mkString("\n\n")
