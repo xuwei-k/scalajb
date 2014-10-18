@@ -1,14 +1,9 @@
 package com.github.xuwei_k.scalajb
 
-import com.github.xuwei_k.scalajb.Scalajb.CLAZZ
 import unfiltered.request._
 import unfiltered.response._
 
-sealed abstract class Lang
-case object JAVA  extends Lang
-case object SCALA extends Lang
-
-class Web extends unfiltered.filter.Plan {
+final class Web extends unfiltered.filter.Plan {
 
   object URL extends Params.Extract(
     "url",
@@ -18,6 +13,10 @@ class Web extends unfiltered.filter.Plan {
   object JSON extends Params.Extract(
     "json",
     Params.first ~> Params.nonempty
+  )
+
+  object JSON_LIB extends Params.Extract(
+    "json_library", values => Some(values.flatMap(JsonLib.map.get))
   )
 
   def booleanParam(key: String, default: Boolean = false) = {
@@ -35,10 +34,10 @@ class Web extends unfiltered.filter.Plan {
     def unapply(p: Params.Map): Option[Lang] = Some(
       p.get("lang").flatMap{
         _.headOption.collect{
-          case "scala" => SCALA
-          case "java"  => JAVA
+          case "scala" => Lang.SCALA
+          case "java"  => Lang.JAVA
         }
-      }.getOrElse(SCALA)
+      }.getOrElse(Lang.SCALA)
     )
   }
 

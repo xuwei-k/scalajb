@@ -2,7 +2,7 @@ package com.github.xuwei_k.scalajb
 
 import argonaut._
 import scala.io.Source
-import scalaz.{-\/, \/-, \/}
+import scalaz.{-\/, \/-}
 
 object Scalajb{
   val reserved = Set(
@@ -39,7 +39,7 @@ object Scalajb{
 
   def fromJValue(json: Json, distinct: Boolean) = objects(convert(json), distinct)
 
-  import Types._
+  import com.github.xuwei_k.scalajb.Types._
 
   def convert(j: Json): Value = j.fold[Types.Value](
     jsonNull = NULL,
@@ -112,50 +112,6 @@ object Scalajb{
 
   type FIELD_DEF = (String, CLASS.T)
 
-  case class CLAZZ(name: String, fields: Set[FIELD_DEF], depth: Int){
-    val className = name.head.toUpper + name.tail
-
-    override def toString = scalaStr
-
-    // TODO when over 23 fields. create abstract class or trait instead of case class ?
-    def scalaStr: String = {
-      val _fields = fields.map{case (k, v) => escapeScala(k) -> v}
-      val max = _fields.map(_._1.size).max
-      val n = name.head.toUpper + name.tail
-      _fields.map{
-        case (k, t) =>
-          val indent = " " * (max - k.size)
-        "  " + k + indent + " :" + t
-      }.mkString("final case class " + n + "(\n", ",\n", "\n)\n")
-    }
-
-    def str(lang: Lang) = lang match{
-      case JAVA  => javaStr()
-      case SCALA => scalaStr
-    }
-
-    def javaStr(indentStr: String = "  "): String = {
-      def i(indentLevel: Int) = indentStr * indentLevel
-      val _fields = fields.map{case (k, v) => escapeJava(k) -> v}
-
-      Iterator(
-        "public class " + className + "{",
-          i(1) + "public " + className + "(",
-          i(2) + _fields.map{case (k, t) =>
-            "final " + t.javaStr + " " + k
-          }.mkString(","),
-            i(1) + "){",
-          _fields.map{case (k, t) =>
-            i(2) + "this." + k + " = " + k + ";"
-          }.mkString("", "\n", "\n" + i(1) + "}\n"),
-          _fields.map{case (k, t) =>
-            i(1) + "public final " + t.javaStr + " " + k + ";"
-          }.mkString("\n"),
-        "}\n"
-      ).mkString("\n")
-    }
-  }
-
   def escapeScala(word: String) = if(reserved(word)) "`" + word + "`" else word
   def escapeJava(word: String) = if(javaReserved(word)) "_" + word else word
 
@@ -165,43 +121,3 @@ object Scalajb{
   }
 }
 
-object Types{
-  sealed abstract class Value
-  case object NULL extends Value
-  case class STRING(s: String) extends Value
-  case class DOUBLE(num: Double) extends Value
-  case class INT(num: Long) extends Value
-  case class BOOL(value: Boolean) extends Value
-  type Field = (String, Value)
-  case class OBJ(obj: List[Field]) extends Value
-  case class ARRAY(arr: List[Value]) extends Value
-}
-
-object CLASS{
-  sealed abstract class T{
-    def javaStr: String = toString
-  }
-  case object Unknown  extends T
-  case object String   extends T
-  case object Double   extends T{
-    override val javaStr = "double"
-  }
-  case object Long     extends T{
-    override val javaStr = "long"
-  }
-  case object Boolean  extends T{
-    override val javaStr = "boolean"
-  }
-  case class  Opt(t: T) extends T{
-    override val toString = "Option[" + t  + "]"
-    override val javaStr = "Option<" + t + ">"
-  }
-  case class  Obj(name: String) extends T{
-    override val toString = name.head.toUpper + name.tail
-  }
-  case class  Array(name: Set[String] \/ String) extends T{
-    override val toString = {
-      name.fold(_.mkString(" or "), identity)
-    }
-  }
-}
