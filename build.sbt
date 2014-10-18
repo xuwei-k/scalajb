@@ -8,7 +8,17 @@ version := "0.1.0-SNAPSHOT"
 
 scalaVersion := "2.11.2"
 
-scalacOptions ++= Seq("-deprecation", "-unchecked")
+scalacOptions ++= (
+  "-deprecation" ::
+  "-unchecked" ::
+  "-Xlint" ::
+  "-language:existentials" ::
+  "-language:higherKinds" ::
+  "-language:implicitConversions" ::
+  "-Ywarn-unused" ::
+  "-Ywarn-unused-import" ::
+  Nil
+)
 
 // https://github.com/unfiltered/unfiltered/blob/v0.8.1/project/common.scala#L6
 // https://github.com/unfiltered/unfiltered/blob/v0.8.2/project/common.scala#L6
@@ -17,7 +27,7 @@ val unfilteredVersion = "0.8.1"
 
 libraryDependencies ++= (
   ("org.scalaz" %% "scalaz-core" % "7.1.0") ::
-  ("org.json4s" %% "json4s-native" % "3.2.10") ::
+  ("io.argonaut" %% "argonaut" % "6.1-M4") ::
   ("net.databinder" %% "unfiltered-filter" % unfilteredVersion) ::
   ("net.databinder" %% "unfiltered-jetty" % unfilteredVersion % "test") ::
   ("net.databinder" %% "dispatch-http" % "0.8.10" % "test") ::

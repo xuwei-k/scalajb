@@ -1,9 +1,7 @@
 package com.github.xuwei_k.scalajb
 
-import scalaz._, Scalaz._
 import unfiltered.request._
 import unfiltered.response._
-import java.net.URL
 
 sealed abstract class Lang
 case object JAVA  extends Lang
@@ -33,6 +31,7 @@ class Web extends unfiltered.filter.Plan {
   }
 
   object DISTINCT{
+    import scalaz.syntax.std.string._
     def unapply(p: Params.Map): Option[Boolean] = Some(
       p.get("distinct").flatMap{
         _.headOption.flatMap{_.parseBoolean.toOption}

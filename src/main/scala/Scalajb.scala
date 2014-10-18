@@ -1,8 +1,8 @@
 package com.github.xuwei_k.scalajb
 
-import org.json4s._
-import org.json4s.native._
+import argonaut._
 import scala.io.Source
+import scalaz.{-\/, \/-, \/}
 
 object Scalajb{
   val reserved = Set(
@@ -24,27 +24,32 @@ object Scalajb{
     "strictfp", "throw" ,"assert" , "enum" ,"const" ,"goto","throws", "transient","volatile"
   )
 
+  def fromURL(url: String, distinct: Boolean) =
+    fromJSON(Source.fromURL(url).mkString, distinct: Boolean)
 
-  def fromURL(url: String, distinct: Boolean) = fromJSON(Source.fromURL(url).mkString, distinct: Boolean)
+  // TODO should not throw error
+  def fromJSON(json: String, distinct: Boolean) =
+    fromJValue(JsonParser.parse(json).fold(sys.error, identity), distinct)
 
-  def fromJSON(json: String, distinct: Boolean) = fromJValue(JsonParser.parse(json), distinct)
-
-  def fromJValue(json: JValue, distinct: Boolean) = objects(convert(json), distinct)
+  def fromJValue(json: Json, distinct: Boolean) = objects(convert(json), distinct)
 
   import Types._
 
-  def convert(j: JValue): Value = {
-    j match {
-      case JObject(obj)        => OBJ(obj.map{case JField(k, v) => k -> convert(v)})
-      case JArray(arr)         => ARRAY(arr.map(convert))
-      case JNothing | JNull    => NULL
-      case JString(s)          => STRING(s)
-      case JDouble(num)        => DOUBLE(num)
-      case JDecimal(num)       => DOUBLE(num.toDouble)
-      case JInt(num)           => INT(num.longValue)
-      case JBool(value)        => BOOL(value)
-    }
-  }
+  def convert(j: Json): Value = j.fold[Types.Value](
+    jsonNull = NULL,
+    jsonBool = BOOL,
+    jsonNumber = { value =>
+      val n = value.toLong
+      if(value.toLong == value){
+        INT(n)
+      }else{
+        DOUBLE(value)
+      }
+    },
+    jsonString = STRING,
+    jsonArray = array => ARRAY(array.map(convert)),
+    jsonObject = obj => OBJ(obj.toList.map{ case (k, v) => k -> convert(v)})
+  )
 
   def type2t(f: Field): FIELD_DEF = {
     val k = f._1
@@ -59,9 +64,9 @@ object Scalajb{
       case ARRAY(arr)  =>
         val r = arr.map(o => type2t((k, o))).toSet
         if(r.size == 1){
-          CLASS.Array(Right(k))
+          CLASS.Array(\/-(k))
         }else{
-          CLASS.Array(Left(r.map(_._1)))
+          CLASS.Array(-\/(r.map(_._1)))
         }
     }
     k -> v
@@ -115,7 +120,7 @@ object Scalajb{
         case (k, t) =>
           val indent = " " * (max - k.size)
         "  " + k + indent + " :" + t
-      }.mkString("case class " + n + "(\n", ",\n", "\n)\n")
+      }.mkString("final case class " + n + "(\n", ",\n", "\n)\n")
     }
 
     def str(lang: Lang) = lang match{
@@ -184,7 +189,7 @@ object CLASS{
   case class  Obj(name: String) extends T{
     override val toString = name.head.toUpper + name.tail
   }
-  case class  Array(name: Either[Set[String], String]) extends T{
+  case class  Array(name: Set[String] \/ String) extends T{
     override val toString = {
       name.fold(_.mkString(" or "), identity)
     }
