@@ -17,14 +17,14 @@ object CLASS{
   case object Boolean  extends T{
     override val javaStr = "boolean"
   }
-  case class  Opt(t: T) extends T{
+  final case class Opt(t: T) extends T{
     override val toString = "Option[" + t  + "]"
     override val javaStr = "Option<" + t + ">"
   }
-  case class  Obj(name: String) extends T{
+  final case class Obj(name: String) extends T{
     override val toString = Scalajb.toCamelUpper(name)
   }
-  case class  Array(name: Set[String] \/ String) extends T{
+  final case class Array(name: Set[String] \/ String) extends T{
     override val toString = {
       name.fold(_.mkString(" or "), identity)
     }
