@@ -44,7 +44,7 @@ final class Web extends unfiltered.filter.Plan {
 
       val SUCCESS = "success"
 
-      (for{
+      JsonContent ~> (for{
         json <- JsonParser.parse(Body.string(request))
         param <- json.as[Param].toDisjunction.leftMap(_.toString())
         result <- Scalajb.run(
@@ -56,14 +56,14 @@ final class Web extends unfiltered.filter.Plan {
             SUCCESS -> Json.jTrue,
             "result" -> Json.jString(result)
           ).toString
-        ) ~> JsonContent
+        )
       }).leftMap( error =>
-        ResponseString(
+        BadRequest ~> ResponseString(
           Json.obj(
             SUCCESS -> Json.jFalse,
             "error" -> Json.jString(error)
           ).toString
-        ) ~> JsonContent ~> BadRequest
+        )
       ).merge
   }
 }
