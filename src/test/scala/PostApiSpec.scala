@@ -1,6 +1,7 @@
 package com.github.xuwei_k.scalajb
 
 import argonaut.{PrettyParams, JsonParser, Json}
+import scala.io.Source
 import scalaj.http.{Http => ScalajHttp, _}
 
 object PostApiSpec extends SpecBase {
@@ -10,12 +11,20 @@ object PostApiSpec extends SpecBase {
         val req = ScalajHttp.postData("http://localhost:" + port + "/api", json.toString).options(OPTIONS)
 
         def j(str: String) = JsonParser.parse(str).fold(
-          e => {println(e); failure(e)},
+          e => {
+            println(e)
+            failure(e)
+          },
           result => {
             result.field("success") mustEqual Some(Json.jBool(success))
-            println(result.pretty(PrettyParams.spaces2))
-            result.field("result").flatMap(_.string).map(ifSuccess).getOrElse(
-              result.field("error").flatMap(_.string).map(ifFailure).getOrElse(
+            result.field("result").flatMap(_.string).map{ a =>
+              println(a)
+              ifSuccess(a)
+            }.getOrElse(
+              result.field("error").flatMap(_.string).map{ a =>
+                println(a)
+                ifFailure(a)
+              }.getOrElse(
                 failure(result.toString)
               )
             )
@@ -89,6 +98,16 @@ object PostApiSpec extends SpecBase {
 
       post(
         Json.obj("json" -> Json.jString("""{ "b" : [1] }"""), "json_library" -> Json.jSingleArray(Json.jString("argonaut"))),
+        200,
+        true,
+        _ must contain("""CodecJson.casecodec1(apply, unapply)("""),
+        constFalse
+      )
+
+      val akkaReferenceConf = Source.fromURL(HOCONSpec.akkaActorReferenceConf).mkString
+
+      post(
+        Json.obj("json" -> Json.jString(akkaReferenceConf), "hocon" -> Json.jTrue, "json_library" -> Json.jSingleArray(Json.jString("argonaut"))),
         200,
         true,
         _ must contain("""CodecJson.casecodec1(apply, unapply)("""),

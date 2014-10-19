@@ -2,14 +2,17 @@ package com.github.xuwei_k.scalajb
 
 object HOCONSpec extends SpecBase {
 
+  final val akkaURL = "https://raw.githubusercontent.com/akka/akka/v2.3.6/"
+
+  final val akkaActorReferenceConf = akkaURL + "akka-actor/src/main/resources/reference.conf"
+
+  val urls: Seq[String] = Seq(
+   //   akkaURL + "akka-remote/src/main/resources/reference.conf", // TODO support multi config file
+    akkaActorReferenceConf
+  )
+
   "HOCON" should {
 
-    val akkaURL = "https://raw.githubusercontent.com/akka/akka/v2.3.6/"
-
-    val urls: Seq[String] = Seq(
-   //   akkaURL + "akka-remote/src/main/resources/reference.conf", // TODO support multi config file
-      akkaURL + "akka-actor/src/main/resources/reference.conf"
-    )
 
     def test(param: (String, String)) = {
       forall(List("", "api")) { path =>

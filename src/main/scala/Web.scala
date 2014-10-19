@@ -45,10 +45,11 @@ final class Web extends unfiltered.filter.Plan {
       val SUCCESS = "success"
 
       JsonContent ~> (for{
-        json <- JsonParser.parse(Body.string(request))
-        param <- json.as[Param].toDisjunction.leftMap(_.toString())
+        paramJson <- JsonParser.parse(Body.string(request))
+        param <- paramJson.as[Param].toDisjunction.leftMap(_.toString())
+        sourceJson <- param.json
         result <- Scalajb.run(
-          param.jsonString, param.topObjectName, param.distinct, param.jsonLibrary, param.lang, param.isImplicit
+          sourceJson, param.topObjectName, param.distinct, param.jsonLibrary, param.lang, param.isImplicit
         )
       } yield {
         ResponseString(
@@ -104,7 +105,7 @@ object Web {
   }
 
   val DISTINCT = booleanParam(Param.DISTINCT, Param.Default.distinct)
-  val HOCON = booleanParam("hocon", false)
+  val HOCON = booleanParam(Param.HOCON, Param.Default.hocon)
   val IMPLICIT = booleanParam(Param.IMPLICIT, Param.Default.isImplicit)
 
   private implicit class CondEither[A](private val value: A) {
