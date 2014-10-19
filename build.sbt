@@ -24,10 +24,12 @@ scalacOptions ++= (
 // https://github.com/unfiltered/unfiltered/blob/v0.8.2/project/common.scala#L6
 // https://code.google.com/p/googleappengine/issues/detail?id=3091
 val unfilteredVersion = "0.8.1"
+val scalazVersion = "7.1.0"
 
 libraryDependencies ++= (
   ("com.typesafe" % "config" % "1.2.1") ::
-  ("org.scalaz" %% "scalaz-core" % "7.1.0") ::
+  ("org.scalaz" %% "scalaz-core" % scalazVersion) ::
+  ("org.scalaz" %% "scalaz-scalacheck-binding" % scalazVersion % "test") ::
   ("io.argonaut" %% "argonaut" % "6.1-M4") ::
   ("net.databinder" %% "unfiltered-filter" % unfilteredVersion) ::
   ("net.databinder" %% "unfiltered-jetty" % unfilteredVersion % "test") ::
