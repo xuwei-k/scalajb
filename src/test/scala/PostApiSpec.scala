@@ -16,7 +16,6 @@ object PostApiSpec extends SpecBase {
             failure(e)
           },
           result => {
-            result.field("success") mustEqual Some(Json.jBool(success))
             result.field("result").flatMap(_.string).map{ a =>
               println(a)
               ifSuccess(a)
@@ -28,6 +27,7 @@ object PostApiSpec extends SpecBase {
                 failure(result.toString)
               )
             )
+            result.field("success") mustEqual Some(Json.jBool(success))
           }
         )
 
@@ -88,6 +88,16 @@ object PostApiSpec extends SpecBase {
 
       post(
         Json.obj("json" -> Json.jString("""{ "a" : 1 }"""), "json_library" -> Json.jSingleArray(Json.jString("play"))),
+        200,
+        true,
+        _ must contain(
+          """implicit val UnknownFormat: OFormat[Unknown] = (__ \ "a").format[Long].inmap(Unknown.apply _, Function.unlift(Unknown.unapply))"""
+        ),
+        constFalse
+      )
+
+      post(
+        Json.obj("json" -> Json.jString("""{ "a" : 1 }"""), "json_library" -> Json.jString("play")),
         200,
         true,
         _ must contain(

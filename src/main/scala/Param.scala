@@ -8,7 +8,7 @@ final case class Param (
   private val jsonString: String,
   topObjectName: Option[String],
   private val _distinct: Option[Boolean],
-  private val jsonLibs: Option[Set[JsonLib]],
+  private val jsonLibs: Option[JsonLib OrElse Set[JsonLib]],
   private val _lang: Option[Lang],
   private val _isImplicit: Option[Boolean],
   private val _hocon: Option[Boolean]
@@ -23,7 +23,7 @@ final case class Param (
   def distinct: Boolean = _distinct.getOrElse(Param.Default.distinct)
   def lang: Lang = _lang.getOrElse(Param.Default.lang)
   def isImplicit: Boolean = _isImplicit.getOrElse(Param.Default.isImplicit)
-  def jsonLibrary: Set[JsonLib] = jsonLibs.getOrElse(Set.empty)
+  def jsonLibrary: Set[JsonLib] = jsonLibs.map(_.run.fold(Set.apply(_), identity)).getOrElse(Set.empty)
   private val hocon: Boolean = _hocon.getOrElse(Param.Default.hocon)
 }
 
