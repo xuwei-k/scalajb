@@ -90,9 +90,10 @@ object PostApiSpec extends SpecBase {
         Json.obj("json" -> Json.jString("""{ "a" : 1 }"""), "json_library" -> Json.jSingleArray(Json.jString("play"))),
         200,
         true,
-        _ must contain(
-          """implicit val UnknownFormat: OFormat[Unknown] = (__ \ "a").format[Long].inmap(Unknown.apply _, Function.unlift(Unknown.unapply))"""
-        ),
+        result => {
+          result must contain("""implicit val UnknownFormat: OFormat[Unknown] =""")
+          result must contain("""(__ \ "a").format[Long].inmap(Unknown.apply _, Function.unlift(Unknown.unapply))""")
+        },
         constFalse
       )
 
@@ -100,9 +101,10 @@ object PostApiSpec extends SpecBase {
         Json.obj("json" -> Json.jString("""{ "a" : 1 }"""), "json_library" -> Json.jString("play")),
         200,
         true,
-        _ must contain(
-          """implicit val UnknownFormat: OFormat[Unknown] = (__ \ "a").format[Long].inmap(Unknown.apply _, Function.unlift(Unknown.unapply))"""
-        ),
+        result => {
+          result must contain("""implicit val UnknownFormat: OFormat[Unknown] =""")
+          result must contain("""(__ \ "a").format[Long].inmap(Unknown.apply _, Function.unlift(Unknown.unapply))""")
+        },
         constFalse
       )
 
