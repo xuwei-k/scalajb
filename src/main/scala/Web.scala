@@ -10,7 +10,7 @@ final class Web extends unfiltered.filter.Plan {
   import Web._
 
   def intent = {
-    case request @ GET(Params(params @ LANG(l) & DISTINCT(d) & HOCON(h) & JSON_LIB(libs) & IMPLICIT(isImplicit))) =>
+    case request @ GET(Params(params @ LANG(l) & DISTINCT(d) & HOCON(h) & JSON_LIB(libs) & IMPLICIT(isImplicit) & COMMENT(comment))) =>
       request.condEither{
         case Params(JSON(j)) =>
           j
@@ -27,7 +27,7 @@ final class Web extends unfiltered.filter.Plan {
                 error.toString + error.getStackTrace.mkString("\n\n", "\n", "")
               )
             } else \/-(j)
-            * <- Scalajb.run(jsonString, name, d, libs, l, isImplicit)
+            * <- Scalajb.run(jsonString, name, d, libs, l, isImplicit, comment)
           } yield *
         }
 
@@ -49,7 +49,7 @@ final class Web extends unfiltered.filter.Plan {
         param <- paramJson.as[Param].toDisjunction.leftMap(_.toString())
         sourceJson <- param.json
         result <- Scalajb.run(
-          sourceJson, param.topObjectName, param.distinct, param.jsonLibrary, param.lang, param.isImplicit
+          sourceJson, param.topObjectName, param.distinct, param.jsonLibrary, param.lang, param.isImplicit, param.comment
         )
       } yield {
         ResponseString(
@@ -107,6 +107,7 @@ object Web {
   val DISTINCT = booleanParam(Param.DISTINCT, Param.Default.distinct)
   val HOCON = booleanParam(Param.HOCON, Param.Default.hocon)
   val IMPLICIT = booleanParam(Param.IMPLICIT, Param.Default.isImplicit)
+  val COMMENT = booleanParam(Param.COMMENT, Param.Default.comment)
 
   private implicit class CondEither[A](private val value: A) {
     import scalaz.syntax.std.option._

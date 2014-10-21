@@ -1,6 +1,6 @@
 package com.github.xuwei_k.scalajb
 
-import argonaut.{PrettyParams, JsonParser, Json}
+import argonaut.{JsonParser, Json}
 import scala.io.Source
 import scalaj.http.{Http => ScalajHttp, _}
 
@@ -109,10 +109,21 @@ object PostApiSpec extends SpecBase {
       )
 
       post(
-        Json.obj("json" -> Json.jString("""{ "b" : [1] }"""), "json_library" -> Json.jSingleArray(Json.jString("argonaut"))),
+        Json.obj("json" -> Json.jString("""{ "b" : [1] }"""), "json_library" -> Json.jSingleArray(Json.jString("argonaut")), "comment" -> Json.jFalse),
         200,
         true,
-        _ must contain("""CodecJson.casecodec1(apply, unapply)("""),
+        { x =>
+            x must contain("""CodecJson.casecodec1(apply, unapply)(""")
+            x must not contain("//")
+        },
+        constFalse
+      )
+
+      post(
+        Json.obj("json" -> Json.jString("""{ "a" : { "b" : { "c" : { "d" : 9 } } } }"""), "top_object_name" -> Json.jString("Hoge")),
+        200,
+        true,
+        _ must contain("// Hoge.a.b"),
         constFalse
       )
 

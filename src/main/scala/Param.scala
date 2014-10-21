@@ -11,7 +11,8 @@ final case class Param (
   private val jsonLibs: Option[JsonLib OrElse Set[JsonLib]],
   private val _lang: Option[Lang],
   private val _isImplicit: Option[Boolean],
-  private val _hocon: Option[Boolean]
+  private val _hocon: Option[Boolean],
+  private val _comment: Option[Boolean]
 ) {
   def json: String \/ String = {
     if(hocon) {
@@ -24,6 +25,7 @@ final case class Param (
   def lang: Lang = _lang.getOrElse(Param.Default.lang)
   def isImplicit: Boolean = _isImplicit.getOrElse(Param.Default.isImplicit)
   def jsonLibrary: Set[JsonLib] = jsonLibs.map(_.run.fold(Set.apply(_), identity)).getOrElse(Set.empty)
+  def comment: Boolean = _comment.getOrElse(Param.Default.comment)
   private val hocon: Boolean = _hocon.getOrElse(Param.Default.hocon)
 }
 
@@ -33,6 +35,7 @@ object Param {
     final val lang = Lang.SCALA
     final val isImplicit = true
     final val hocon = false
+    final val comment = true
   }
 
   final val JSON = "json"
@@ -42,15 +45,17 @@ object Param {
   final val LANG = "lang"
   final val IMPLICIT = "implicit"
   final val HOCON = "hocon"
+  final val COMMENT = "comment"
 
   implicit val instance: CodecJson[Param] =
-    CodecJson.casecodec7(apply, unapply)(
+    CodecJson.casecodec8(apply, unapply)(
       JSON,
       TOP_OBJECT_NAME,
       DISTINCT,
       JSON_LIBRARY,
       LANG,
       IMPLICIT,
-      HOCON
+      HOCON,
+      COMMENT
     )
 }
