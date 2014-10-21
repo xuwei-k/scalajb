@@ -33,7 +33,7 @@ s"""  ${implicitMod(isImplicit)} val ${clazz.className}CodecJson: CodecJson[${cl
       val inmap = s"""${clazz.classNameUpper}.apply _, Function.unlift(${clazz.classNameUpper}.unapply)"""
 
       if (clazz.fields.length == 1) {
-        s"""  $valdef = ${f(clazz.fields.head)}.inmap($inmap)"""
+        s"""  $valdef =\n    ${f(clazz.fields.head)}.inmap($inmap)"""
       } else { s"""
   $valdef = (
     ${clazz.fields.map(f).mkString(" and\n    ")}
