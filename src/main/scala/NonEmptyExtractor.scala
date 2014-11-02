@@ -4,6 +4,9 @@ import unfiltered.request.Params
 
 sealed abstract class NonEmptyExtractor[A] {
   def unapply(map: Params.Map): NonEmpty[A]
+
+  def map[B](f: A => B): NonEmptyExtractor[B] =
+    NonEmptyExtractor(m => f(unapply(m).get))
 }
 
 object NonEmptyExtractor {

@@ -1,6 +1,7 @@
 package com.github.xuwei_k.scalajb
 
 import argonaut.{JsonParser, Json}
+import unfiltered.filter.Plan.Intent
 import scala.io.Source
 import scalaz.{\/-, \/}
 import unfiltered.request._
@@ -9,8 +10,8 @@ import unfiltered.response._
 final class Web extends unfiltered.filter.Plan {
   import Web._
 
-  def intent = {
-    case request @ GET(Params(params @ LANG(l) & Param.DISTINCT(d) & Param.HOCON(h) & JSON_LIB(libs) & Param.IMPLICIT(isImplicit) & Param.COMMENT(comment))) =>
+  def intent: Intent = ({
+    case request @ GET((Path("/api") | Path("/")) & Params(params @ LANG(l) & Param.DISTINCT(d) & Param.HOCON(h) & JSON_LIB(libs) & Param.IMPLICIT(isImplicit) & Param.COMMENT(comment))) =>
       request.condEither{
         case Params(JSON(j)) =>
           j
@@ -66,7 +67,7 @@ final class Web extends unfiltered.filter.Plan {
           ).toString
         )
       ).merge
-  }
+  }: Intent).orElse(TwentyThree.intent)
 }
 
 object Web {

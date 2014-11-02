@@ -28,6 +28,7 @@ val scalazVersion = "7.1.0"
 
 libraryDependencies ++= (
   ("com.typesafe" % "config" % "1.2.1") ::
+  ("com.github.xuwei-k" %% "play-twenty-three-generator" % "0.1.2") ::
   ("org.scalaz" %% "scalaz-core" % scalazVersion) ::
   ("org.scalaz" %% "scalaz-scalacheck-binding" % scalazVersion % "test") ::
   ("io.argonaut" %% "argonaut" % "6.1-M4") ::

@@ -10,4 +10,6 @@ final case class BoolParam(key: String, default: Boolean) {
   def unapply(map: Params.Map): NonEmpty[Boolean] =
     Extractor.unapply(map)
 
+  val opt: NonEmptyExtractor[Option[Boolean]] =
+    Extractor.map(Option.apply)
 }
