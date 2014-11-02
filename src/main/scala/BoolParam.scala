@@ -4,9 +4,10 @@ import unfiltered.request.Params
 
 final case class BoolParam(key: String, default: Boolean) {
 
-  val uf: Params.Extract[Nothing, Boolean] =
+  val Extractor: NonEmptyExtractor[Boolean] =
     Web.booleanParam(key, default)
 
-  def unapply(map: Params.Map): Option[Boolean] =
-    uf.unapply(map)
+  def unapply(map: Params.Map): NonEmpty[Boolean] =
+    Extractor.unapply(map)
+
 }

@@ -81,28 +81,26 @@ object Web {
     Params.first ~> Params.nonempty
   )
 
-  object JSON_LIB extends Params.Extract(
-    Param.JSON_LIBRARY, values => Some(values.flatMap(JsonLib.map.get).toSet)
-  )
+  val JSON_LIB: NonEmptyExtractor[Set[JsonLib]] =
+    NonEmptyExtractor(
+      _.getOrElse(Param.JSON_LIBRARY, Nil).flatMap(JsonLib.map.get).toSet
+    )
 
-  def booleanParam(key: String, default: Boolean) = {
+  def booleanParam(key: String, default: Boolean): NonEmptyExtractor[Boolean] = {
     import scalaz.syntax.std.string._
-    new Params.Extract(params => Option(
-      params.get(key).flatMap {
-        _.headOption.flatMap {
-          _.parseBoolean.toOption
-        }
-      }.getOrElse(default)
-    ))
+    NonEmptyExtractor(
+      _.getOrElse(key, Nil).flatMap(
+        _.parseBoolean.toOption
+      ).headOption.getOrElse(default)
+    )
   }
 
-  object LANG{
-    def unapply(p: Params.Map): Option[Lang] = Some(
-      p.get(Param.LANG).flatMap{
+  val LANG: NonEmptyExtractor[Lang] =
+    NonEmptyExtractor(
+      _.get(Param.LANG).flatMap{
         _.headOption.flatMap(Lang.map.get)
       }.getOrElse(Lang.SCALA)
     )
-  }
 
   private implicit class CondEither[A](private val value: A) {
     import scalaz.syntax.std.option._
