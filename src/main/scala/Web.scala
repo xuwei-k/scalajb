@@ -10,7 +10,7 @@ final class Web extends unfiltered.filter.Plan {
   import Web._
 
   def intent = {
-    case request @ GET(Params(params @ LANG(l) & DISTINCT(d) & HOCON(h) & JSON_LIB(libs) & IMPLICIT(isImplicit) & COMMENT(comment))) =>
+    case request @ GET(Params(params @ LANG(l) & Param.DISTINCT(d) & Param.HOCON(h) & JSON_LIB(libs) & Param.IMPLICIT(isImplicit) & Param.COMMENT(comment))) =>
       request.condEither{
         case Params(JSON(j)) =>
           j
@@ -103,11 +103,6 @@ object Web {
       }.getOrElse(Lang.SCALA)
     )
   }
-
-  val DISTINCT = booleanParam(Param.DISTINCT, Param.Default.distinct)
-  val HOCON = booleanParam(Param.HOCON, Param.Default.hocon)
-  val IMPLICIT = booleanParam(Param.IMPLICIT, Param.Default.isImplicit)
-  val COMMENT = booleanParam(Param.COMMENT, Param.Default.comment)
 
   private implicit class CondEither[A](private val value: A) {
     import scalaz.syntax.std.option._

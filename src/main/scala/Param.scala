@@ -21,41 +21,38 @@ final case class Param (
       )
     } else \/-(jsonString)
   }
-  def distinct: Boolean = _distinct.getOrElse(Param.Default.distinct)
+  def distinct: Boolean = _distinct.getOrElse(Param.DISTINCT.default)
   def lang: Lang = _lang.getOrElse(Param.Default.lang)
-  def isImplicit: Boolean = _isImplicit.getOrElse(Param.Default.isImplicit)
+  def isImplicit: Boolean = _isImplicit.getOrElse(Param.IMPLICIT.default)
   def jsonLibrary: Set[JsonLib] = jsonLibs.map(_.run.fold(Set.apply(_), identity)).getOrElse(Set.empty)
-  def comment: Boolean = _comment.getOrElse(Param.Default.comment)
-  private val hocon: Boolean = _hocon.getOrElse(Param.Default.hocon)
+  def comment: Boolean = _comment.getOrElse(Param.COMMENT.default)
+  private val hocon: Boolean = _hocon.getOrElse(Param.HOCON.default)
 }
 
 object Param {
   object Default {
-    final val distinct = true
     final val lang = Lang.SCALA
-    final val isImplicit = true
-    final val hocon = false
-    final val comment = true
   }
 
   final val JSON = "json"
   final val TOP_OBJECT_NAME = "top_object_name"
-  final val DISTINCT = "distinct"
   final val JSON_LIBRARY = "json_library"
   final val LANG = "lang"
-  final val IMPLICIT = "implicit"
-  final val HOCON = "hocon"
-  final val COMMENT = "comment"
+
+  val IMPLICIT = BoolParam("implicit", true)
+  val DISTINCT = BoolParam("distinct", true)
+  val HOCON = BoolParam("hocon", false)
+  val COMMENT = BoolParam("comment", true)
 
   implicit val instance: CodecJson[Param] =
     CodecJson.casecodec8(apply, unapply)(
       JSON,
       TOP_OBJECT_NAME,
-      DISTINCT,
+      DISTINCT.key,
       JSON_LIBRARY,
       LANG,
-      IMPLICIT,
-      HOCON,
-      COMMENT
+      IMPLICIT.key,
+      HOCON.key,
+      COMMENT.key
     )
 }
