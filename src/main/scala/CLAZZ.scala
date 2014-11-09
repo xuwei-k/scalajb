@@ -6,7 +6,12 @@ final case class CLAZZ(private val name: String, private val fieldSet: Set[FIELD
   val className = Scalajb.toCamel(name)
   val classNameUpper = Scalajb.toCamelUpper(name)
 
-  lazy val fields: Seq[FIELD_DEF] = fieldSet.toSeq.sortBy(_._1)
+  lazy val fields: Seq[FIELD_DEF] = fieldSet.groupBy(_._1).values.flatMap{ x =>
+    val values = x.map(_._2)
+    if(values.size > 1 && values.forall(_.isOpt) && values.exists(! _.optUnknown)){
+      x.filterNot(_._2.optUnknown)
+    }else x
+  }.toList.sortBy(_._1)
 
   override def toString = scalaStr(true)
 
