@@ -10,7 +10,19 @@ import unfiltered.response._
 final class Web extends unfiltered.filter.Plan {
   import Web._
 
+  private[this] final val SCALAJB_JS = "/scalajb.js"
+
+  private[this] def fromResource(name: String): ResponseString = ResponseString(
+    scala.io.Source.fromInputStream(getClass.getResourceAsStream(name))("UTF-8").mkString
+  )
+
   def intent: Intent = ({
+    case GET(Path("/console")) =>
+      HtmlContent ~> fromResource("/console.html")
+
+    case GET(Path(SCALAJB_JS)) =>
+      JsContent ~> fromResource(SCALAJB_JS)
+
     case request @ GET((Path("/api") | Path("/")) & Params(params @ LANG(l) & Param.DISTINCT(d) & Param.HOCON(h) & JSON_LIB(libs) & Param.IMPLICIT(isImplicit) & Param.COMMENT(comment))) =>
       request.condEither{
         case Params(JSON(j)) =>
