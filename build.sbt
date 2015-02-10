@@ -31,7 +31,7 @@ libraryDependencies ++= (
   ("com.github.xuwei-k" %% "play-twenty-three-generator" % "0.1.2") ::
   ("org.scalaz" %% "scalaz-core" % scalazVersion) ::
   ("org.scalaz" %% "scalaz-scalacheck-binding" % scalazVersion % "test") ::
-  ("io.argonaut" %% "argonaut" % "6.1-M4") ::
+  ("io.argonaut" %% "argonaut" % "6.1-M5").exclude("org.scala-lang", "scala-compiler") ::
   ("net.databinder" %% "unfiltered-filter" % unfilteredVersion) ::
   ("net.databinder" %% "unfiltered-jetty" % unfilteredVersion % "test") ::
   ("net.databinder" %% "dispatch-http" % "0.8.10" % "test") ::

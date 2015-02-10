@@ -65,11 +65,11 @@ object Scalajb{
     jsonNull = NULL,
     jsonBool = BOOL,
     jsonNumber = { value =>
-      val n = value.toLong
-      if(value.toLong == value){
-        INT(n)
-      }else{
-        DOUBLE(value)
+      value.toLong match {
+        case Some(n) =>
+          INT(n)
+        case None =>
+          DOUBLE(value.toDouble)
       }
     },
     jsonString = STRING,
