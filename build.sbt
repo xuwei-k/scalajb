@@ -38,6 +38,5 @@ libraryDependencies ++= (
   ("org.specs2" %% "specs2-core" % "2.4.6" % "test") ::
   ("org.scalaj" %% "scalaj-http" % "0.3.16" % "test") ::
   ("javax.servlet" % "servlet-api" % "2.3" % "provided") ::
-  ("org.eclipse.jetty" % "jetty-webapp" % "8.1.16.v20140903" % "container") ::
   Nil
 )

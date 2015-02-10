@@ -2,4 +2,7 @@ language: scala
 
 sudo: false
 
-script: sh ./travis.sh
+script:
+  - rm project/appengine.sbt
+  - rm appengine.sbt
+  - sbt test
