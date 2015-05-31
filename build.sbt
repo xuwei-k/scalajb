@@ -8,6 +8,12 @@ version := "0.1.0-SNAPSHOT"
 
 scalaVersion := "2.11.6"
 
+val unusedWarnings = (
+  "-Ywarn-unused" ::
+  "-Ywarn-unused-import" ::
+  Nil
+)
+
 scalacOptions ++= (
   "-deprecation" ::
   "-unchecked" ::
@@ -18,10 +24,10 @@ scalacOptions ++= (
   Nil
 )
 
-scalacOptions in compile ++= (
-  "-Ywarn-unused" ::
-  "-Ywarn-unused-import" ::
-  Nil
+scalacOptions ++= unusedWarnings
+
+Seq(Compile, Test).flatMap(c =>
+  scalacOptions in (c, console) ~= {_.filterNot(unusedWarnings.toSet)}
 )
 
 // https://github.com/unfiltered/unfiltered/blob/v0.8.1/project/common.scala#L6
